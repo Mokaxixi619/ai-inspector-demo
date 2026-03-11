@@ -191,19 +191,19 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
 
   <!-- 搜索英雄区 -->
   <div class="search-hero">
-    <div class="search-title">💬 自然语言描述你要找的人或事，AI自动完成跨镜追踪 · <strong>已完成查询：昨天14:00-18:00，前台大厅戴安全帽的人</strong></div>
+    <div class="search-title">💬 自然语言描述你要找的人或事，AI自动完成跨镜追踪 · <strong>已完成查询：今天下午14:30，B2停车场，谁蹭了我的车？</strong></div>
     <div class="search-bar">
       <div class="search-input-wrap">
         <span style="font-size:18px">🔍</span>
-        <input value="昨天14:00-18:00，前台大厅戴安全帽的人" />
-        <span style="font-size:12px;color:var(--text2);white-space:nowrap">已找到 <strong style="color:var(--accent)">6</strong> 个结果</span>
+        <input value="今天下午14:30，B2停车场，谁蹭了我的车？" />
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap">已找到 <strong style="color:var(--accent)">4</strong> 个结果</span>
       </div>
       <button class="search-btn">重新搜索</button>
     </div>
     <div class="filter-tags">
-      <div class="filter-tag active">📅 昨天 14:00 — 18:00</div>
-      <div class="filter-tag active">📍 全园区</div>
-      <div class="filter-tag active">👤 戴安全帽</div>
+      <div class="filter-tag active">📅 今天 14:20 — 14:45</div>
+      <div class="filter-tag active">📍 B2 停车场</div>
+      <div class="filter-tag active">🚗 车辆：粤B·88888 白色Model Y</div>
       <div class="filter-tag">+ 添加条件</div>
       <div class="filter-tag" style="margin-left:auto;">
         排序：
@@ -228,17 +228,18 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
         <div class="tl-result-item active" onclick="selectTl(this)">
           <div class="tl-item-header">
             <span class="tl-match high">高匹配</span>
-            <span style="font-size:12px;color:var(--text)">前台大厅入口</span>
-            <span class="tl-time-badge">14:03:22</span>
+            <span style="font-size:12px;color:var(--text)">B2停车场 C区</span>
+            <span class="tl-time-badge">14:31:07</span>
           </div>
           <div class="tl-item-body">
             <div class="tl-thumb" style="background:linear-gradient(135deg,#0f2240,#1a3a5c)">
-              <div style="position:absolute;width:40%;height:65%;left:30%;top:10%;border:2px solid var(--danger)"></div>
-              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-001</div>
+              <div style="position:absolute;width:65%;height:45%;left:15%;top:25%;border:2px solid var(--danger)"></div>
+              <div style="position:absolute;top:2px;left:4px;font-size:8px;color:var(--danger);font-weight:700">碰撞事件</div>
+              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-B2-03</div>
             </div>
             <div class="tl-item-info">
-              <div class="tl-item-desc">1名戴黄色安全帽人员从前台大厅入口进入，特征与目标高度匹配</div>
-              <div class="tl-item-cam">Cam-001 · 置信度 94%</div>
+              <div class="tl-item-desc">⚠️ 深色SUV倒车时右后方与白色Model Y左前方发生碰撞，随后肇事车辆缓慢驶离</div>
+              <div class="tl-item-cam">Cam-B2-03 · 置信度 97%</div>
             </div>
             <div class="play-btn">▶</div>
           </div>
@@ -248,16 +249,16 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
           <div class="tl-item-header">
             <span class="tl-match high">高匹配</span>
             <span style="font-size:12px;color:var(--text)">走廊-A区</span>
-            <span class="tl-time-badge">14:06:41</span>
+            <span class="tl-time-badge">14:31:52</span>
           </div>
           <div class="tl-item-body">
             <div class="tl-thumb" style="background:linear-gradient(135deg,#0f1e28,#1a2a3a)">
-              <div style="position:absolute;width:35%;height:70%;left:35%;top:8%;border:2px solid var(--danger)"></div>
-              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-007</div>
+              <div style="position:absolute;width:55%;height:40%;left:20%;top:30%;border:2px solid var(--warning)"></div>
+              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-B2-04</div>
             </div>
             <div class="tl-item-info">
-              <div class="tl-item-desc">同一目标经过A区走廊，向电梯方向移动</div>
-              <div class="tl-item-cam">Cam-007 · 跨镜追踪匹配</div>
+              <div class="tl-item-desc">肇事车辆（深灰色途观 粤A·5566X）驶离碰撞区域，车牌清晰可辨</div>
+              <div class="tl-item-cam">Cam-B2-04 · 车牌识别置信度 99%</div>
             </div>
             <div class="play-btn">▶</div>
           </div>
@@ -267,16 +268,16 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
           <div class="tl-item-header">
             <span class="tl-match mid">中匹配</span>
             <span style="font-size:12px;color:var(--text)">电梯厅</span>
-            <span class="tl-time-badge">14:08:15</span>
+            <span class="tl-time-badge">14:34:20</span>
           </div>
           <div class="tl-item-body">
             <div class="tl-thumb" style="background:linear-gradient(135deg,#101828,#1a2436)">
-              <div style="position:absolute;width:30%;height:60%;left:38%;top:12%;border:2px solid var(--warning)"></div>
-              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-009</div>
+              <div style="position:absolute;width:35%;height:60%;left:32%;top:12%;border:2px solid var(--warning)"></div>
+              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-B1-出口</div>
             </div>
             <div class="tl-item-info">
-              <div class="tl-item-desc">电梯厅检测到疑似同一人员，安全帽已摘除，外貌特征匹配</div>
-              <div class="tl-item-cam">Cam-009 · 置信度 78%</div>
+              <div class="tl-item-desc">肇事车辆经由B1层出口驶出地下车库，出口闸机识别车牌 粤A·5566X</div>
+              <div class="tl-item-cam">Cam-出口-01 · 闸机记录匹配</div>
             </div>
             <div class="play-btn">▶</div>
           </div>
@@ -286,16 +287,16 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
           <div class="tl-item-header">
             <span class="tl-match high">高匹配</span>
             <span style="font-size:12px;color:var(--text)">机房门口</span>
-            <span class="tl-time-badge">14:12:33</span>
+            <span class="tl-time-badge">14:38:55</span>
           </div>
           <div class="tl-item-body">
             <div class="tl-thumb" style="background:linear-gradient(135deg,#1a0a28,#2a1a40)">
-              <div style="position:absolute;width:40%;height:65%;left:25%;top:10%;border:2px solid var(--danger)"></div>
-              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-004</div>
+              <div style="position:absolute;width:40%;height:65%;left:25%;top:10%;border:2px solid var(--accent)"></div>
+              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-B2-03</div>
             </div>
             <div class="tl-item-info">
-              <div class="tl-item-desc">⚠️ 同一对象出现在机房门口，触发尾随入侵告警</div>
-              <div class="tl-item-cam">Cam-004 · 关联告警事件</div>
+              <div class="tl-item-desc">📌 车主（粤B·88888）步行返回停车位，发现车辆受损，AI自动关联本次事件</div>
+              <div class="tl-item-cam">Cam-B2-03 · 事件自动关联</div>
             </div>
             <div class="play-btn">▶</div>
           </div>
@@ -339,19 +340,19 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
               <div style="position:absolute;bottom:2px;right:2px;font-size:7px;color:rgba(255,255,255,0.4)">最佳截帧</div>
             </div>
             <div class="entity-info">
-              <div class="entity-id">目标 #TGT-2024-007</div>
-              <div class="entity-type">可疑人员 · 未登记</div>
-              <div class="entity-conf" style="color:var(--danger)">⚠️ 关联高级告警事件</div>
+              <div class="entity-id">肇事车辆 #VEH-2026-031</div>
+              <div class="entity-type">深灰色途观 · 粤A·5566X</div>
+              <div class="entity-conf" style="color:var(--danger)">⚠️ 停车场碰撞逃逸事件</div>
             </div>
           </div>
           <div class="entity-body">
-            <div class="entity-row"><span class="entity-label">外貌特征</span><span class="entity-value">黄色安全帽、蓝色工装</span></div>
-            <div class="entity-row"><span class="entity-label">性别/体型</span><span class="entity-value">男性 · 中等身材</span></div>
-            <div class="entity-row"><span class="entity-label">首次出现</span><span class="entity-value">14:03:22 前台入口</span></div>
-            <div class="entity-row"><span class="entity-label">最后出现</span><span class="entity-value">15:42:07 B栋出口</span></div>
-            <div class="entity-row"><span class="entity-label">在园时长</span><span class="entity-value" style="color:var(--warning)">1小时38分钟</span></div>
-            <div class="entity-row"><span class="entity-label">出现摄像头</span><span class="entity-value">5路（确认）</span></div>
-            <div class="entity-row"><span class="entity-label">关联告警</span><span class="entity-value" style="color:var(--danger)">1条高级事件</span></div>
+            <div class="entity-row"><span class="entity-label">车辆信息</span><span class="entity-value">深灰色大众途观 2022款</span></div>
+            <div class="entity-row"><span class="entity-label">车牌号码</span><span class="entity-value" style="color:var(--danger);font-weight:700">粤A · 5566X</span></div>
+            <div class="entity-row"><span class="entity-label">碰撞时间</span><span class="entity-value" style="color:var(--danger)">14:31:07</span></div>
+            <div class="entity-row"><span class="entity-label">逃逸时间</span><span class="entity-value">14:34:20 出口闸机</span></div>
+            <div class="entity-row"><span class="entity-label">在园时长</span><span class="entity-value" style="color:var(--warning)">约3分钟（碰撞后即逃）</span></div>
+            <div class="entity-row"><span class="entity-label">关联摄像头</span><span class="entity-value">3路（B2-03、B2-04、出口01）</span></div>
+            <div class="entity-row"><span class="entity-label">证据完整度</span><span class="entity-value" style="color:var(--success)">✅ 可出警</span></div>
           </div>
           <div class="entity-shots">
             <div class="entity-shot" style="background:linear-gradient(135deg,#0f2240,#1a3a5c)"><div style="position:absolute;width:50%;height:75%;left:25%;top:5%;border:1px solid var(--danger)"></div><span style="font-size:9px">14:03</span></div>
@@ -362,15 +363,15 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
 
         <!-- 其他候选目标 -->
         <div style="padding:10px 12px;">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">其他可能匹配目标</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">其他候选车辆</div>
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;opacity:0.6;">
             <div style="width:36px;height:36px;background:var(--bg3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>
-            <div style="flex:1"><div style="font-size:12px">候选目标 #002</div><div style="font-size:11px;color:var(--text2)">相似度 62% · 蓝色安全帽</div></div>
-            <div style="font-size:11px;color:var(--text2)">2处匹配</div>
+            <div style="flex:1"><div style="font-size:12px">候选目标 #002</div><div style="font-size:11px;color:var(--text2)">相似度 68% · 银色SUV</div></div>
+            <div style="font-size:11px;color:var(--text2)">1处匹配</div>
           </div>
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;opacity:0.5;">
             <div style="width:36px;height:36px;background:var(--bg3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>
-            <div style="flex:1"><div style="font-size:12px">候选目标 #003</div><div style="font-size:11px;color:var(--text2)">相似度 54% · 红色安全帽</div></div>
+            <div style="flex:1"><div style="font-size:12px">候选目标 #003</div><div style="font-size:11px;color:var(--text2)">相似度 42% · 白色轿车</div></div>
             <div style="font-size:11px;color:var(--text2)">1处匹配</div>
           </div>
         </div>
@@ -381,8 +382,8 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
     <div class="map-panel">
       <div class="panel-header">
         <div>
-          <div class="panel-header-title">🗺️ 时空轨迹图 <span style="font-size:11px;color:var(--text2);font-weight:400">B栋1层平面</span></div>
-          <div class="panel-header-sub">目标移动路径 · 14:03 — 14:15</div>
+          <div class="panel-header-title">🗺️ 时空轨迹图 <span style="font-size:11px;color:var(--text2);font-weight:400">B2 停车场平面</span></div>
+          <div class="panel-header-sub">肇事车辆轨迹 · 14:30 — 14:35 · 粤A·5566X</div>
         </div>
         <div style="display:flex;gap:6px;">
           <button style="padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font)">1F</button>
@@ -394,12 +395,12 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
         <div class="floor-plan">
           <div class="fp-outer"></div>
           <!-- 房间 -->
-          <div class="fp-room" style="left:5%;top:5%;width:28%;height:35%">前台大厅</div>
-          <div class="fp-room" style="left:35%;top:5%;width:30%;height:20%">会议室A</div>
-          <div class="fp-room" style="left:67%;top:5%;width:28%;height:35%">办公区</div>
-          <div class="fp-room" style="left:5%;top:55%;width:20%;height:40%">储物间</div>
-          <div class="fp-room" style="left:27%;top:55%;width:25%;height:40%">机房<br><span style="font-size:9px;color:var(--danger)">🔒 受限区域</span></div>
-          <div class="fp-room" style="left:54%;top:55%;width:20%;height:40%">电梯厅</div>
+          <div class="fp-room" style="left:5%;top:5%;width:28%;height:35%">B2-A区<br><span style="font-size:9px">车位A01-A30</span></div>
+          <div class="fp-room" style="left:35%;top:5%;width:30%;height:20%">B2-B区<br><span style="font-size:9px">车位B01-B20</span></div>
+          <div class="fp-room" style="left:67%;top:5%;width:28%;height:35%">B2-C区 🚗<br><span style="font-size:9px;color:var(--danger)">碰撞发生地点</span></div>
+          <div class="fp-room" style="left:5%;top:55%;width:20%;height:40%">消防通道</div>
+          <div class="fp-room" style="left:27%;top:55%;width:25%;height:40%">行车通道</div>
+          <div class="fp-room" style="left:54%;top:55%;width:20%;height:40%">出入口<br><span style="font-size:9px;color:var(--success)">闸机记录✅</span></div>
           <div class="fp-room" style="left:76%;top:55%;width:19%;height:40%">安保室</div>
           <!-- 走廊 -->
           <div class="fp-corridor" style="left:5%;top:42%;width:90%;height:12%"></div>
@@ -430,14 +431,14 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
           </svg>
 
           <!-- 时间戳标签 -->
-          <div class="traj-label" style="left:8%;top:29%">14:03:22</div>
-          <div class="traj-label" style="left:32%;top:29%">14:06:41</div>
-          <div class="traj-label" style="left:44%;top:38%">14:08:15</div>
-          <div class="traj-label" style="left:50%;top:46%">14:12:33 ⚠️</div>
+          <div class="traj-label" style="left:8%;top:29%">14:30:12 进场</div>
+          <div class="traj-label" style="left:60%;top:10%">14:31:07 💥碰撞</div>
+          <div class="traj-label" style="left:44%;top:38%">14:31:52 逃离</div>
+          <div class="traj-label" style="left:50%;top:58%">14:34:20 出闸✅</div>
 
           <!-- 当前位置目标标记 -->
           <div class="target-marker" style="left:55.5%;top:80%"></div>
-          <div class="target-label" style="left:55.5%;top:80%">目标当前位置</div>
+          <div class="target-label" style="left:55.5%;top:80%">粤A·5566X 逃离路线</div>
         </div>
 
         <!-- 地图图例 -->
