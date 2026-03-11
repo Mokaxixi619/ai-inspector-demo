@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>视觉智能巡查 Agent · 巡查资产库</title>
+<title>空间资源中心 · 视觉智能巡查 Agent</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
@@ -11,167 +11,73 @@
   --accent: #1e6fff; --accent2: #00c2ff;
   --text: #e8f0fe; --text2: #a0b4c8; --border: #1e3a5f;
   --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
-  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font: 'PingFang SC', sans-serif;
 }
 body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
 
+/* 导航 */
 .sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
 .logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
 .logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); }
-.logo-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
 .nav { flex: 1; padding: 16px 0; }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 14px; color: var(--text2); transition: all 0.2s; border-left: 3px solid transparent; text-decoration: none; cursor: pointer; }
-.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 14px; color: var(--text2); text-decoration: none; }
 .nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
-.nav-badge { margin-left: auto; background: var(--danger); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; }
-.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+.nav-group-title { padding: 12px 20px 4px; font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; }
 
 .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.topbar { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0; }
+.topbar { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; }
 .topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
-.topbar-title span { color: var(--accent2); }
-.btn { padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; font-family: var(--font); transition: all 0.2s; }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
-/* Tab栏 */
-.tabs { display: flex; gap: 0; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 24px; flex-shrink: 0; }
-.tab { padding: 12px 20px; font-size: 14px; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
-.tab:hover { color: var(--text); }
-.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.tab-badge { display: inline-block; background: var(--bg3); color: var(--text2); font-size: 11px; padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
+/* 空间资源布局 */
+.content { flex: 1; display: grid; grid-template-columns: 350px 1fr; overflow: hidden; }
 
-.content { flex: 1; display: flex; overflow: hidden; }
+/* 左侧机位树 */
+.asset-tree { border-right: 1px solid var(--border); background: var(--bg2); display: flex; flex-direction: column; }
+.tree-header { padding: 20px; border-bottom: 1px solid var(--border); }
+.tree-list { flex: 1; overflow-y: auto; padding: 10px; }
+.asset-item { padding: 12px; border-radius: 8px; margin-bottom: 4px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 12px; }
+.asset-item:hover { background: var(--bg3); }
+.asset-item.active { background: rgba(30,111,255,0.1); border: 1px solid var(--accent); }
+.cam-icon { width: 32px; height: 32px; border-radius: 6px; background: #000; display: flex; align-items: center; justify-content: center; opacity: 0.6; }
 
-/* 左：分类树 */
-.tree-panel { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
-.tree-title { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.tree-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text2); transition: all 0.2s; }
-.tree-item:hover { background: var(--bg3); color: var(--text); }
-.tree-item.active { background: rgba(30,111,255,0.12); color: var(--accent); }
-.tree-count { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--text2); }
-.tree-sub { padding-left: 20px; }
-.tree-sub .tree-item { font-size: 12px; }
+/* 右侧配置画像 */
+.config-pane { flex: 1; overflow-y: auto; padding: 32px; background: var(--bg); }
+.profile-header { display: flex; gap: 24px; margin-bottom: 32px; }
+.live-preview { width: 400px; height: 225px; background: #000; border-radius: 12px; border: 1px solid var(--border); position: relative; }
+.profile-info h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
 
-/* 主区 */
-.main-area { flex: 1; overflow-y: auto; padding: 20px 24px; }
-
-/* SOP文件列表 */
-.sop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px; }
-.sop-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s; }
-.sop-card:hover { border-color: var(--accent); box-shadow: 0 4px 20px rgba(30,111,255,0.1); }
-.sop-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
-.sop-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-.sop-icon.blue { background: rgba(30,111,255,0.15); }
-.sop-icon.green { background: rgba(0,217,126,0.12); }
-.sop-icon.orange { background: rgba(255,184,0,0.12); }
-.sop-icon.red { background: rgba(255,71,87,0.12); }
-.sop-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
-.sop-sub { font-size: 12px; color: var(--text2); }
-.sop-body { padding: 12px 16px; }
-.sop-stats { display: flex; gap: 14px; margin-bottom: 10px; }
-.sop-stat { font-size: 12px; color: var(--text2); }
-.sop-stat strong { color: var(--text); }
-.sop-progress { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 10px; }
-.sop-fill { height: 100%; border-radius: 2px; }
-.sop-tags { display: flex; gap: 4px; flex-wrap: wrap; }
-.sop-tag { font-size: 11px; padding: 2px 7px; background: var(--bg3); border-radius: 8px; color: var(--text2); }
-.sop-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-.sop-status { font-size: 12px; }
-.sop-status.active { color: var(--success); }
-.sop-status.draft { color: var(--warning); }
-.sop-actions { display: flex; gap: 6px; }
-.sop-btn { padding: 4px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: var(--font); transition: all 0.2s; }
-.sop-btn:hover { border-color: var(--accent); color: var(--accent); }
-.sop-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-/* 解析结果展示 */
-.parse-result { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
-.parse-header { padding: 14px 18px; background: rgba(0,217,126,0.08); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-.parse-title { font-size: 14px; font-weight: 600; }
-.parse-meta { font-size: 12px; color: var(--text2); margin-left: auto; }
-.parse-body { display: flex; gap: 0; }
-.parse-left { width: 240px; min-width: 240px; padding: 16px; border-right: 1px solid var(--border); background: var(--bg3); }
-.parse-right { flex: 1; padding: 16px; }
-.parse-section { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-.rule-item { display: flex; gap: 8px; padding: 8px 10px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; }
-.rule-icon { font-size: 14px; flex-shrink: 0; }
-.rule-text { font-size: 13px; color: var(--text); flex: 1; line-height: 1.4; }
-.rule-cam { font-size: 11px; color: var(--accent); margin-top: 2px; }
-.pdf-preview { height: 200px; background: var(--bg3); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; color: var(--text2); font-size: 13px; border: 1px dashed var(--border); }
-
-/* 巡检路线 */
-.route-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-.route-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s; }
-.route-card:hover { border-color: var(--accent); }
-.route-header { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-.route-icon { font-size: 20px; }
-.route-title { font-size: 14px; font-weight: 600; flex: 1; }
-.route-freq { font-size: 12px; padding: 2px 8px; background: rgba(30,111,255,0.12); color: var(--accent); border-radius: 8px; }
-.route-body { padding: 12px 14px; }
-.route-stops { display: flex; flex-direction: column; gap: 6px; }
-.route-stop { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.stop-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-.stop-line { width: 1px; height: 14px; background: var(--border); margin-left: 2.5px; }
-.stop-name { flex: 1; }
-.stop-duration { font-size: 11px; color: var(--text2); }
-.route-footer { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
-.route-status { color: var(--success); }
-
-/* 算法场景库 */
-.algo-section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-.algo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
-.algo-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: all 0.2s; position: relative; }
-.algo-card:hover { border-color: var(--accent); }
-.algo-card.active { border-color: var(--success); background: rgba(0,217,126,0.05); }
-.algo-card.warn { border-color: var(--warning); background: rgba(255,184,0,0.04); }
-.algo-name { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-.algo-type { font-size: 11px; color: var(--text2); margin-bottom: 8px; }
-.algo-acc { font-size: 12px; }
-.algo-acc .num { font-weight: 700; }
-.algo-switch { position: absolute; top: 10px; right: 10px; width: 32px; height: 18px; background: var(--success); border-radius: 9px; cursor: pointer; }
-.algo-switch::after { content: ''; position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: all 0.2s; }
-.algo-switch.off { background: var(--border); }
-.algo-switch.off::after { right: auto; left: 2px; }
-
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-.page-nav { background: var(--bg2); border-top: 1px solid var(--border); padding: 10px 24px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-.page-nav span { font-size: 12px; color: var(--text2); }
-.page-link { padding: 4px 12px; border-radius: 14px; font-size: 12px; color: var(--text2); text-decoration: none; border: 1px solid var(--border); transition: all 0.2s; }
-.page-link:hover, .page-link.current { border-color: var(--accent); color: var(--accent); background: rgba(30,111,255,0.08); }
+/* SOP配置区 */
+.sop-section { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+.sop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+.sop-card { border: 1px solid var(--border); background: var(--bg3); padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: flex-start; }
+.sop-card.active { border-color: var(--success); background: rgba(0,217,126,0.05); }
+.btn-toggle { width: 40px; height: 20px; background: var(--border); border-radius: 10px; position: relative; cursor: pointer; transition: 0.3s; }
+.btn-toggle.active { background: var(--success); }
+.toggle-ball { width: 16px; height: 16px; background: #fff; border-radius: 50%; position: absolute; left: 2px; top: 2px; transition: 0.3s; }
+.active .toggle-ball { left: 22px; }
 </style>
 </head>
 <body>
 
 <div class="sidebar">
-  <div class="logo">
-    <div class="logo-title">🔭 巡查 Agent</div>
-    <div class="logo-sub">视觉智能运营平台</div>
-  </div>
-              <nav class="nav">
+  <div class="logo"><div class="logo-title">🔭 巡查 Agent</div></div>
+    <nav class="nav">
     <div style="font-size:10px;color:var(--text2);padding:8px 20px 4px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.6">核心指挥</div>
     <a href="dashboard-home.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🏠</span> 管理首页</div></a>
     <a href="index.html" style="text-decoration:none"><div class="nav-item"><span class="icon">💬</span> Agent 调度舱</div></a>
-    <a href="tasks.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📋</span> 盯防任务记录</div></a>
+    <a href="tasks.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📋</span> 巡查任务中心</div></a>
 
     <div style="font-size:10px;color:var(--text2);padding:12px 20px 4px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.6">异常处置</div>
-    <a href="incident.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🚨</span> 事件闭环中心 <span class="nav-badge">7</span></div></a>
+    <a href="incident.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🚨</span> 事件闭环中心</div></a>
     <a href="workorder.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🔧</span> 工单管理</div></a>
 
     <div style="font-size:10px;color:var(--text2);padding:12px 20px 4px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.6">事件追溯</div>
-    <a href="traceback.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🔍</span> 智能溯源工作台</div></a>
+    <a href="traceback.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🔍</span> 智能溯源（倒查）</div></a>
     <a href="evidence.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🗂️</span> 案件中心</div></a>
 
-    <div style="font-size:10px;color:var(--text2);padding:12px 20px 4px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.6">巡查执行</div>
-    <a href="tasks.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🛡️</span> 布防任务配置</div></a>
+    <div style="font-size:10px;color:var(--text2);padding:12px 20px 4px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.6">资产与规则</div>
+    <a href="assets.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📂</span> 空间资源中心</div></a>
     <a href="templates.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📦</span> 模板库</div></a>
-    <a href="assets.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📂</span> 巡查资产库</div></a>
-    <a href="sop-config.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📑</span> SOP 配置</div></a>
     <a href="report.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📄</span> 巡检效能报告</div></a>
 
     <div style="font-size:10px;color:var(--text2);padding:12px 20px 4px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.6">系统设置</div>
@@ -181,246 +87,70 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
 
     <a href="mobile.html" style="text-decoration:none"><div class="nav-item" style="font-weight:700;color:var(--text);margin:4px 0"><span class="icon">📱</span> 移动端视图</div></a>
   </nav>
-  <div class="sidebar-footer">
-    <span class="status-dot"></span>
-    <span style="font-size:12px;color:var(--text2)">Agent运行中 · 23路在线</span>
-  </div>
 </div>
 
 <div class="main">
-  <div class="topbar">
-    <div class="topbar-title">巡查 <span>资产库</span></div>
-    <span style="font-size:13px;color:var(--text2)">SOP文件 · 巡检路线 · 算法场景 · 点位管理</span>
-    <div style="margin-left:auto;display:flex;gap:8px;">
-      <button class="btn btn-ghost">🔍 搜索</button>
-      <button class="btn btn-primary">+ 导入SOP文件</button>
-    </div>
-  </div>
-
-  <!-- Tab -->
-  <div class="tabs">
-    <div class="tab active">📄 SOP文件库 <span class="tab-badge">12</span></div>
-    <div class="tab">🗺️ 巡检路线 <span class="tab-badge">8</span></div>
-    <div class="tab">🤖 算法场景库 <span class="tab-badge">800+</span></div>
-    <div class="tab">📷 点位管理 <span class="tab-badge">25</span></div>
-  </div>
+  <header class="topbar">
+    <div class="topbar-title">📂 空间资源中心 · <span>点位画像与 SOP 规则绑定</span></div>
+  </header>
 
   <div class="content">
-    <!-- 左：分类树 -->
-    <div class="tree-panel">
-      <div class="tree-title">文件分类</div>
-      <div class="tree-item active">📁 全部文件 <span class="tree-count">12</span></div>
-      <div class="tree-item">🏢 楼栋管理 <span class="tree-count">3</span></div>
-      <div class="tree-sub">
-        <div class="tree-item">中控室<span class="tree-count">1</span></div>
-        <div class="tree-item">公共区域<span class="tree-count">2</span></div>
+    <div class="asset-tree">
+      <div class="tree-header">
+        <input type="text" placeholder="搜索区域、机位..." style="width:100%; background:var(--bg3); border:1px solid var(--border); padding:8px; border-radius:6px; color:#fff;">
       </div>
-      <div class="tree-item">🔥 消防安全 <span class="tree-count">2</span></div>
-      <div class="tree-item">🚗 停车场 <span class="tree-count">2</span></div>
-      <div class="tree-item">🔒 门禁安全 <span class="tree-count">2</span></div>
-      <div class="tree-item">😊 人员行为 <span class="tree-count">2</span></div>
-      <div class="tree-item">🛠️ 设备巡检 <span class="tree-count">1</span></div>
-      <div style="height:16px;border-top:1px solid var(--border);margin-top:12px;"></div>
-      <div class="tree-title" style="margin-top:12px">文件状态</div>
-      <div class="tree-item">✅ 已解析启用 <span class="tree-count" style="color:var(--success)">9</span></div>
-      <div class="tree-item">⏳ 解析中 <span class="tree-count" style="color:var(--warning)">1</span></div>
-      <div class="tree-item">📝 草稿 <span class="tree-count" style="color:var(--text2)">2</span></div>
-    </div>
-
-    <!-- 主：内容区 -->
-    <div class="main-area">
-
-      <!-- SOP解析结果展示（置顶） -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div style="font-size:14px;font-weight:600;">最近解析 · 视频监控巡查标准作业程序</div>
-        <div style="font-size:12px;color:var(--success)">✅ 已完成解析，111项规则已激活</div>
-      </div>
-
-      <div class="parse-result">
-        <div class="parse-header">
-          <span style="font-size:16px">✅</span>
-          <div class="parse-title">视频监控巡查SOP · AI解析完成</div>
-          <div class="parse-meta">解析用时 8.3s · 置信度 96% · 解析于 09:15</div>
+      <div class="tree-list">
+        <div class="asset-item active">
+          <div class="cam-icon">📹</div>
+          <div><div style="font-size:13px; font-weight:700;">B2-停车场-003</div><div style="font-size:10px; color:var(--success);">● 正常运行</div></div>
         </div>
-        <div class="parse-body">
-          <div class="parse-left">
-            <div class="parse-section">原始PDF预览</div>
-            <div class="pdf-preview">
-              <div style="font-size:32px">📄</div>
-              <div>视频监控巡查SOP.pdf</div>
-              <div style="font-size:11px">共47页 · 111项规则</div>
-              <button style="margin-top:4px;padding:4px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--font)">📖 查看原文</button>
-            </div>
-          </div>
-          <div class="parse-right">
-            <div class="parse-section" style="margin-bottom:8px;">AI提取的执行规则（示例）</div>
-            <div class="rule-item">
-              <div class="rule-icon">🔒</div>
-              <div class="rule-text">
-                <div><strong>机房/财务室</strong>：检测到尾随进入或非工作时间异常停留</div>
-                <div class="rule-cam">触发摄像头：Cam-004 · 处置：立即录像+呼叫巡逻+上报主管</div>
-              </div>
-            </div>
-            <div class="rule-item">
-              <div class="rule-icon">🔥</div>
-              <div class="rule-text">
-                <div><strong>消防通道</strong>：检测到杂物堆放占道面积>30%</div>
-                <div class="rule-cam">触发摄像头：Cam-008、Cam-009 · 处置：自动派单限期清理+定时复核</div>
-              </div>
-            </div>
-            <div class="rule-item">
-              <div class="rule-icon">🚬</div>
-              <div class="rule-text">
-                <div><strong>阳台/通道</strong>：检测到违规吸烟或攀爬护栏行为</div>
-                <div class="rule-cam">触发摄像头：Cam-011、Cam-014 · 处置：紧急弹窗预警+工单整改</div>
-              </div>
-            </div>
-            <div class="rule-item">
-              <div class="rule-icon">😴</div>
-              <div class="rule-text">
-                <div><strong>中控室</strong>：工作时间检测到保安睡岗、离岗超过5分钟</div>
-                <div class="rule-cam">触发摄像头：Cam-001 · 处置：截图记录+通知值班主管</div>
-              </div>
-            </div>
-            <div style="text-align:center;font-size:12px;color:var(--text2);margin-top:8px;">… 还有 <strong style="color:var(--accent)">107项</strong> 规则已解析 <a style="color:var(--accent);cursor:pointer">查看全部 →</a></div>
-          </div>
+        <div class="asset-item">
+          <div class="cam-icon">📹</div>
+          <div><div style="font-size:13px; font-weight:700;">西区-周界-04</div><div style="font-size:10px; color:var(--text2);">● 巡检待机</div></div>
         </div>
-      </div>
-
-      <!-- SOP文件卡片 -->
-      <div style="font-size:14px;font-weight:600;margin-bottom:12px;">全部SOP文件</div>
-      <div class="sop-grid">
-
-        <div class="sop-card">
-          <div class="sop-header">
-            <div class="sop-icon blue">📋</div>
-            <div>
-              <div class="sop-title">视频监控巡查SOP</div>
-              <div class="sop-sub">楼栋安全 · 全区域</div>
-            </div>
-          </div>
-          <div class="sop-body">
-            <div class="sop-stats">
-              <div class="sop-stat">规则 <strong>111条</strong></div>
-              <div class="sop-stat">覆盖 <strong>5个区域</strong></div>
-              <div class="sop-stat">版本 <strong>V3.2</strong></div>
-            </div>
-            <div class="sop-progress"><div class="sop-fill" style="width:100%;background:var(--success)"></div></div>
-            <div class="sop-tags">
-              <span class="sop-tag">楼栋</span><span class="sop-tag">中控室</span><span class="sop-tag">周界</span><span class="sop-tag">停车场</span>
-            </div>
-          </div>
-          <div class="sop-footer">
-            <span class="sop-status active">✅ 已激活 · 111项规则运行中</span>
-            <div class="sop-actions">
-              <button class="sop-btn">编辑</button>
-              <button class="sop-btn primary">查看规则</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="sop-card">
-          <div class="sop-header">
-            <div class="sop-icon red">🔥</div>
-            <div>
-              <div class="sop-title">消防安全巡查规程</div>
-              <div class="sop-sub">消防安全 · 重点区域</div>
-            </div>
-          </div>
-          <div class="sop-body">
-            <div class="sop-stats">
-              <div class="sop-stat">规则 <strong>38条</strong></div>
-              <div class="sop-stat">覆盖 <strong>8个点位</strong></div>
-              <div class="sop-stat">版本 <strong>V2.1</strong></div>
-            </div>
-            <div class="sop-progress"><div class="sop-fill" style="width:100%;background:var(--success)"></div></div>
-            <div class="sop-tags">
-              <span class="sop-tag">消防通道</span><span class="sop-tag">设备房</span><span class="sop-tag">楼道</span>
-            </div>
-          </div>
-          <div class="sop-footer">
-            <span class="sop-status active">✅ 已激活 · 38项规则运行中</span>
-            <div class="sop-actions">
-              <button class="sop-btn">编辑</button>
-              <button class="sop-btn primary">查看规则</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="sop-card">
-          <div class="sop-header">
-            <div class="sop-icon orange">🚗</div>
-            <div>
-              <div class="sop-title">停车场秩序管理规范</div>
-              <div class="sop-sub">车辆秩序 · B1-B3层</div>
-            </div>
-          </div>
-          <div class="sop-body">
-            <div class="sop-stats">
-              <div class="sop-stat">规则 <strong>24条</strong></div>
-              <div class="sop-stat">覆盖 <strong>3层停车场</strong></div>
-              <div class="sop-stat">版本 <strong>V1.8</strong></div>
-            </div>
-            <div class="sop-progress"><div class="sop-fill" style="width:72%;background:var(--warning)"></div></div>
-            <div class="sop-tags">
-              <span class="sop-tag">B1</span><span class="sop-tag">B2</span><span class="sop-tag">B3</span><span class="sop-tag">出入口</span>
-            </div>
-          </div>
-          <div class="sop-footer">
-            <span class="sop-status draft">⏳ 解析中 · 17/24项完成</span>
-            <div class="sop-actions">
-              <button class="sop-btn">查看进度</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="sop-card">
-          <div class="sop-header">
-            <div class="sop-icon green">😊</div>
-            <div>
-              <div class="sop-title">人员行为规范检查</div>
-              <div class="sop-sub">行为合规 · 全员</div>
-            </div>
-          </div>
-          <div class="sop-body">
-            <div class="sop-stats">
-              <div class="sop-stat">规则 <strong>19条</strong></div>
-              <div class="sop-stat">覆盖 <strong>全区域</strong></div>
-              <div class="sop-stat">版本 <strong>V2.0</strong></div>
-            </div>
-            <div class="sop-progress"><div class="sop-fill" style="width:100%;background:var(--success)"></div></div>
-            <div class="sop-tags">
-              <span class="sop-tag">保安</span><span class="sop-tag">保洁</span><span class="sop-tag">访客</span>
-            </div>
-          </div>
-          <div class="sop-footer">
-            <span class="sop-status active">✅ 已激活 · 19项规则运行中</span>
-            <div class="sop-actions">
-              <button class="sop-btn">编辑</button>
-              <button class="sop-btn primary">查看规则</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 上传新SOP -->
-        <div style="background:var(--bg2);border:2px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;padding:30px;cursor:pointer;transition:all 0.2s;min-height:160px;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="font-size:32px">📤</div>
-          <div style="font-size:14px;font-weight:600;color:var(--text)">上传新SOP文件</div>
-          <div style="font-size:12px;color:var(--text2)">支持 PDF / Word / TXT</div>
-          <div style="font-size:11px;color:var(--text2)">AI自动解析，提取执行规则</div>
-        </div>
-
       </div>
     </div>
-  </div>
 
-  <div class="page-nav">
-    <span>原型导航：</span>
-    <a class="page-link" href="index.html">💬 调度舱</a>
-    <a class="page-link" href="incident.html">📋 事件中心</a>
-    <a class="page-link" href="traceback.html">🔍 溯源工作台</a>
-    <a class="page-link current" href="assets.html">📂 资产库</a>
-    <a class="page-link" href="skills.html">⚙️ 技能库</a>
+    <div class="config-pane">
+      <div class="profile-header">
+        <div class="live-preview">
+          <div style="position:absolute; top:10px; left:10px; font-size:10px; background:rgba(0,0,0,0.5); padding:2px 6px;">LIVE / B2-003</div>
+        </div>
+        <div class="profile-info">
+          <h2>B2-停车场-003</h2>
+          <p style="color:var(--text2); font-size:14px;">位置：负二层 C区 3号立柱</p>
+          <div style="display:flex; gap:8px; margin-top:16px;">
+            <span style="background:var(--bg3); padding:4px 8px; border-radius:4px; font-size:11px;">类型: 云台机</span>
+            <span style="background:var(--bg3); padding:4px 8px; border-radius:4px; font-size:11px;">状态: 在线</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sop-section">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:16px; font-weight:800;">🛡️ 绑定的 SOP 巡查规则</h3>
+          <span style="font-size:12px; color:var(--accent2); cursor:pointer;">+ 关联新规则</span>
+        </div>
+        <div class="sop-grid">
+          <!-- 规则1 -->
+          <div class="sop-card active">
+            <div>
+              <div style="font-weight:700; font-size:14px; margin-bottom:4px;">违停占用检测</div>
+              <div style="font-size:11px; color:var(--text2);">SOP: 《交通秩序管理办法》</div>
+            </div>
+            <div class="btn-toggle active"><div class="toggle-ball"></div></div>
+          </div>
+          <!-- 规则2 -->
+          <div class="sop-card">
+            <div>
+              <div style="font-weight:700; font-size:14px; margin-bottom:4px;">明火烟雾感知</div>
+              <div style="font-size:11px; color:var(--text2);">SOP: 《消防安全红线标准》</div>
+            </div>
+            <div class="btn-toggle"><div class="toggle-ball"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
