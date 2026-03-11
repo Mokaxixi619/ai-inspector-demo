@@ -2,34 +2,44 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>AI 视觉巡检员 · 原型对比演示站</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 视觉巡检员 · 设计演示站</title>
 <style>
-  body { background: #050a14; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-  h1 { font-size: 24px; margin-bottom: 40px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 80%; max-width: 900px; }
-  .card { background: #0b1321; border: 1px solid #1e2f47; border-radius: 20px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; text-decoration: none; color: inherit; }
-  .card:hover { border-color: #2d7cff; transform: translateY(-10px); box-shadow: 0 20px 40px rgba(45,124,255,0.2); }
-  .v1 { opacity: 0.6; }
-  .v2 { border-color: #2d7cff; box-shadow: 0 0 20px rgba(45,124,255,0.1); }
-  .tag { font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 100px; margin-bottom: 20px; display: inline-block; }
-  .v1-tag { background: #333; }
-  .v2-tag { background: #2d7cff; }
-  .title { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
-  .desc { font-size: 14px; color: #8a9cb5; line-height: 1.6; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #050a14; color: #fff; font-family: 'PingFang SC', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 40px 20px; }
+  h1 { font-size: 22px; margin-bottom: 8px; letter-spacing: 1px; }
+  .sub { font-size: 14px; color: #8a9cb5; margin-bottom: 48px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; width: 100%; max-width: 860px; }
+  .card { background: #0b1321; border: 1px solid #1e2f47; border-radius: 20px; padding: 36px; text-align: center; text-decoration: none; color: inherit; transition: all 0.3s; }
+  .card:hover { transform: translateY(-8px); }
+  .card.primary { border-color: #2d7cff; box-shadow: 0 0 24px rgba(45,124,255,0.15); }
+  .card.secondary { opacity: 0.65; }
+  .card.secondary:hover { opacity: 0.9; }
+  .tag { font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 100px; margin-bottom: 18px; display: inline-block; letter-spacing: 1px; }
+  .tag-primary { background: #2d7cff; color: #fff; }
+  .tag-secondary { background: #2a3547; color: #8a9cb5; }
+  .title { font-size: 20px; font-weight: 800; margin-bottom: 10px; }
+  .desc { font-size: 13px; color: #8a9cb5; line-height: 1.7; }
+  .enter-btn { display: inline-block; margin-top: 20px; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+  .card.primary .enter-btn { background: #2d7cff; color: #fff; }
+  .card.secondary .enter-btn { background: #1e2f47; color: #8a9cb5; }
 </style>
 </head>
 <body>
-  <h1>AI 视觉巡检员 · 迭代对比演示</h1>
+  <h1>🔭 AI 视觉巡检员</h1>
+  <p class="sub">视觉智能巡查 Agent · 设计演示站</p>
   <div class="grid">
-    <a href="prototype/index.html" class="card v1">
-      <div class="tag v1-tag">LEGACY</div>
-      <div class="title">1.0 基础分析站</div>
-      <div class="desc">传统视频监控 · 基础人脸/车辆告警 · 静态列表管理</div>
+    <a href="prototype/dashboard-home.html" class="card primary">
+      <div class="tag tag-primary">▶ 主力版本</div>
+      <div class="title">视觉智能巡查 Agent</div>
+      <div class="desc">完整功能架构 · 19个页面全互通<br>核心指挥 / 异常处置 / 事件追溯 / 巡查执行</div>
+      <div class="enter-btn">进入演示 →</div>
     </a>
-    <a href="prototype_v2/index.html" class="card v2">
-      <div class="tag v2-tag">AGENTIC 2.0</div>
-      <div class="title">2.0 智能调度舱</div>
-      <div class="desc">Agentic 任务流 · ST-Link 跨镜追踪 · SOP 语义解析 · 闭环处置</div>
+    <a href="prototype_v2/index.html" class="card secondary">
+      <div class="tag tag-secondary">备选设计</div>
+      <div class="title">Agentic 2.0 黑色指挥舱</div>
+      <div class="desc">探索性设计方案 · 黑色科技风<br>ST-Link 引擎 · Agentic 任务流概念版</div>
+      <div class="enter-btn">查看备选 →</div>
     </a>
   </div>
 </body>
