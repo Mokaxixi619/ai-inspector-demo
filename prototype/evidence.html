@@ -11,16 +11,16 @@
   --accent: #1e6fff; --accent2: #00c2ff;
   --text: #e8f0fe; --text2: #a0b4c8; --border: #1e3a5f;
   --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
-  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font: 'PingFang SC', sans-serif;
 }
 body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
 
-/* 导航复用 */
+/* 侧边栏复用 1.0 标准样式 */
 .sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
 .logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
 .logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); }
 .nav { flex: 1; padding: 16px 0; overflow-y: auto; }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 14px; color: var(--text2); text-decoration: none; border-left: 3px solid transparent; transition: all 0.2s; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 14px; color: var(--text2); text-decoration: none; border-left: 3px solid transparent; transition: 0.2s; }
 .nav-item:hover { background: var(--bg3); color: var(--text); }
 .nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
 .nav-group-title { padding: 12px 20px 4px; font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; }
@@ -29,26 +29,42 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
 .topbar { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; }
 .topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
 
-/* 案件列表 */
-.content { flex: 1; padding: 24px; overflow-y: auto; background: var(--bg); display: grid; grid-template-columns: 1fr 320px; gap: 24px; }
-.case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-.case-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: all 0.3s; cursor: pointer; }
-.case-card:hover { border-color: var(--accent); transform: translateY(-4px); }
-.case-thumb { height: 140px; background: #000; position: relative; }
-.case-badge { position: absolute; top: 12px; left: 12px; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-.badge-closed { background: var(--success); color: #000; }
-.badge-open { background: var(--danger); color: #fff; }
-.case-info { padding: 16px; }
-.case-id { font-size: 11px; color: var(--accent2); margin-bottom: 4px; }
-.case-name { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
-.case-meta { font-size: 12px; color: var(--text2); display: flex; justify-content: space-between; }
+/* 案件中心内容布局 */
+.content { flex: 1; padding: 24px; overflow-y: auto; background: var(--bg); display: grid; grid-template-columns: 1fr 350px; gap: 24px; }
 
-/* 右侧详情面板 */
-.case-detail { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-.detail-title { font-size: 14px; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
-.evidence-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
-.evi-img { width: 80px; height: 60px; background: var(--bg3); border-radius: 4px; flex-shrink: 0; }
-.btn-export { width: 100%; padding: 12px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+/* 案件卡片列表 */
+.case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.case-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: 0.3s; cursor: pointer; display: flex; flex-direction: column; }
+.case-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+.case-card.active { border-color: var(--accent); box-shadow: 0 0 20px rgba(30,111,255,0.2); }
+
+.case-visual { height: 160px; background: #000; position: relative; overflow: hidden; }
+.case-badge { position: absolute; top: 12px; left: 12px; font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: 800; }
+.status-closed { background: var(--success); color: #000; }
+.status-open { background: var(--danger); color: #fff; }
+
+.case-body { padding: 16px; flex: 1; }
+.case-id { font-size: 11px; color: var(--accent2); font-weight: 700; margin-bottom: 4px; }
+.case-name { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #fff; }
+.case-stats { display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px; font-size: 12px; color: var(--text2); }
+
+/* 右侧核心：证据包预览 */
+.evidence-panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+.pack-title { font-size: 16px; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 16px; display: flex; align-items:center; gap:8px; }
+
+.evidence-group { display: flex; flex-direction: column; gap: 12px; }
+.group-label { font-size: 12px; color: var(--accent2); font-weight: 800; text-transform: uppercase; }
+.thumb-scroll { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.thumb-item { height: 80px; background: var(--bg3); border-radius: 6px; border: 1px solid var(--border); position: relative; overflow: hidden; cursor: zoom-in; }
+.thumb-item::after { content: '🔍'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); opacity: 0; transition: 0.2s; }
+.thumb-item:hover::after { opacity: 1; }
+
+.file-list { background: var(--bg3); border-radius: 8px; padding: 12px; }
+.file-item { display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.file-item:last-child { border-bottom: none; }
+
+.btn-download-all { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; margin-top: auto; }
+.btn-download-all:hover { background: #3d7fff; box-shadow: 0 4px 15px rgba(30,111,255,0.4); }
 </style>
 </head>
 <body>
@@ -66,11 +82,11 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
     <a href="workorder.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🔧</span> 工单管理</div></a>
 
     <div style="font-size:10px;color:var(--text2);padding:12px 20px 4px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.6">事件追溯</div>
-    <a href="traceback.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🔍</span> 智能溯源（倒查）</div></a>
+    <a href="traceback.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🔍</span> 智能溯源工作台</div></a>
     <a href="evidence.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🗂️</span> 案件中心</div></a>
 
     <div style="font-size:10px;color:var(--text2);padding:12px 20px 4px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.6">资产与规则</div>
-    <a href="assets.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📂</span> 空间资源中心</div></a>
+    <a href="assets.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📂</span> 巡查资产库</div></a>
     <a href="templates.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📦</span> 模板库</div></a>
     <a href="report.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📄</span> 巡检效能报告</div></a>
 
@@ -84,67 +100,79 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); disp
 </div>
 
 <div class="main">
-  <div class="topbar"><div class="topbar-title">🗂️ 案件中心 · <span>历史档案与证据库</span></div></div>
+  <div class="topbar">
+    <div class="topbar-title">🗂️ 案件中心 · <span>案件追溯与电子卷宗管理</span></div>
+    <div style="font-size: 12px; color: var(--text2);">已归档 142 宗案件</div>
+  </div>
+
   <div class="content">
-    <div class="case-list-container">
-      <div style="margin-bottom: 20px; display: flex; gap: 12px;">
-        <input type="text" placeholder="搜索案件号、地点、嫌疑人特征..." style="flex:1; background: var(--bg2); border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: #fff;">
-        <select style="background: var(--bg2); border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: #fff;"><option>全部案件</option><option>已结案</option></select>
+    <div class="main-list">
+      <div style="margin-bottom: 24px; display: flex; gap: 16px;">
+        <input type="text" placeholder="搜索案件号、涉案实体、发生地点..." style="flex:1; background: var(--bg2); border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; font-size: 14px;">
+        <select style="background: var(--bg2); border: 1px solid var(--border); color: #fff; padding: 0 16px; border-radius: 8px;"><option>全部案件类型</option><option>安防类</option><option>消防类</option></select>
       </div>
-      
+
       <div class="case-grid">
-        <!-- 案件1 -->
-        <div class="case-card">
-          <div class="case-thumb">
-            <div class="case-badge badge-closed">已结案 (Archived)</div>
-            <div style="position: absolute; bottom: 8px; right: 8px; font-size: 10px; background: rgba(0,0,0,0.6); padding: 2px 6px;">共 12 份证据</div>
+        <!-- 重点展示：之前的案例 -->
+        <div class="case-card active">
+          <div class="case-visual">
+            <div class="case-badge status-closed">已结案 (Archived)</div>
+            <div style="position:absolute; bottom:10px; right:10px; font-size:10px; background:rgba(0,0,0,0.6); padding:2px 6px;">证据包大小: 42MB</div>
           </div>
-          <div class="case-info">
+          <div class="case-body">
             <div class="case-id">CASE-20260311-001</div>
-            <div class="case-name">B2停车场车辆剐蹭逃逸事件</div>
-            <div class="case-meta">
-              <span>2026-03-11 14:31</span>
-              <span style="color: var(--danger)">损失: 车辆受损</span>
+            <div class="case-name">B2停车场车辆剐蹭逃逸案件</div>
+            <div class="case-stats">
+              <span>📅 2026-03-11 14:31</span>
+              <span style="color:var(--success)">证据完整度: 100%</span>
             </div>
           </div>
         </div>
-        
-        <!-- 案件2 -->
+
         <div class="case-card">
-          <div class="case-thumb">
-            <div class="case-badge badge-open" style="background: var(--warning); color: #000;">处理中 (Active)</div>
+          <div class="case-visual">
+            <div class="case-badge status-open" style="background:var(--warning); color:#000;">待复核 (Pending)</div>
           </div>
-          <div class="case-info">
+          <div class="case-body">
             <div class="case-id">CASE-20260310-042</div>
-            <div class="case-name">西区围墙不明身份人员翻越</div>
-            <div class="case-meta">
-              <span>2026-03-10 23:15</span>
-              <span>状态: 研判中</span>
+            <div class="case-name">实验楼顶层禁区不明入侵</div>
+            <div class="case-stats">
+              <span>📅 2026-03-10 23:15</span>
+              <span>关联工单: WO-9921</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="case-detail">
-      <div class="detail-title">案件详情 · 卷宗预览</div>
-      <div style="font-size: 12px; line-height: 1.6;">
-        <p><strong>案件描述：</strong> 通过 ST-Link 引擎完成跨镜追踪，确认嫌疑车辆为粤A·5566X，已完成闸机记录比对。</p>
-      </div>
-      <div>
-        <div style="font-size: 11px; color: var(--text2); margin-bottom: 8px;">证据链截图 (Evidence Strip)</div>
-        <div class="evidence-strip">
-          <div class="evi-img"></div>
-          <div class="evi-img"></div>
-          <div class="evi-img"></div>
-          <div class="evi-img"></div>
+    <div class="evidence-panel">
+      <h3 class="pack-title">📁 电子卷宗预览 · <span>CASE-001</span></h3>
+      
+      <div class="evidence-group">
+        <label class="group-label">视觉取证 (Visual Evidence)</label>
+        <div class="thumb-scroll">
+          <div class="thumb-item" style="background: linear-gradient(135deg,#162b4a,#0a1628)"></div>
+          <div class="thumb-item" style="background: linear-gradient(135deg,#162b4a,#0a1628)"></div>
+          <div class="thumb-item" style="background: linear-gradient(135deg,#162b4a,#0a1628)"></div>
+          <div class="thumb-item" style="background: linear-gradient(135deg,#162b4a,#0a1628)"></div>
         </div>
       </div>
-      <div style="background: var(--bg3); padding: 12px; border-radius: 8px; font-size: 11px;">
-        <p style="color: var(--accent2)">📜 已生成轨迹 PDF 报告</p>
-        <p>📁 包含 3 路摄像头原始切片</p>
+
+      <div class="evidence-group">
+        <label class="group-label">归档附件 (Attached Files)</label>
+        <div class="file-list">
+          <div class="file-item"><span>📄 ST-Link 轨迹复现报告.pdf</span><span style="color:var(--accent2)">查看</span></div>
+          <div class="file-item"><span>📹 关联监控切片_CamB2.mp4</span><span style="color:var(--accent2)">播放</span></div>
+          <div class="file-item"><span>📑 现场处置反馈记录.docx</span><span style="color:var(--accent2)">下载</span></div>
+        </div>
       </div>
-      <button class="btn-export">📥 导出完整案件卷宗</button>
+
+      <div style="background:rgba(0,217,126,0.05); border:1px solid var(--success); padding:16px; border-radius:8px; font-size:12px;">
+        <div style="font-weight:800; color:var(--success); margin-bottom:4px;">✅ 防伪存证已签署</div>
+        <p style="color:var(--text2)">本案件证据已通过区块链摘要存证，具备法律追溯效力。</p>
+      </div>
+
+      <button class="btn-download-all">📥 下载全量证据包 (ZIP)</button>
     </div>
   </div>
 </div>
