@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>证据包管理 · 视觉智能巡查Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a1628; --bg2: #0f2240; --bg3: #162b4a;
+  --accent: #1e6fff; --accent2: #00c2ff;
+  --text: #e8f0fe; --text2: #a0b4c8;
+  --border: #1e3a5f;
+  --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
+  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+
+.sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); letter-spacing: 1px; }
+.logo-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; font-size: 14px; color: var(--text2); transition: all 0.2s; border-left: 3px solid transparent; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+.status-text { font-size: 12px; color: var(--text2); }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.header { height: 60px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+.header-title { font-size: 16px; font-weight: 600; }
+.btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #2a7fff; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--bg3); }
+.btn-success { background: var(--success); color: #000; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.content { flex: 1; padding: 24px; overflow-y: auto; }
+
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--bg2); border-radius: 12px; padding: 16px 20px; border: 1px solid var(--border); }
+.stat-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+.stat-value { font-size: 24px; font-weight: 700; }
+
+.filter-bar { background: var(--bg2); border-radius: 12px; padding: 16px 20px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+.filter-group { display: flex; align-items: center; gap: 8px; }
+.filter-label { font-size: 13px; color: var(--text2); }
+.filter-select, .filter-input { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+.filter-input { width: 180px; }
+
+.evidence-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.evidence-card { background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; transition: all 0.2s; }
+.evidence-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.evidence-img { height: 160px; background: var(--bg3); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.evidence-img img { width: 100%; height: 100%; object-fit: cover; }
+.evidence-img .placeholder { font-size: 48px; opacity: 0.3; }
+.evidence-badge { position: absolute; top: 8px; left: 8px; padding: 4px 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.6); }
+.evidence-body { padding: 16px; }
+.evidence-id { font-family: monospace; color: var(--accent2); font-size: 13px; margin-bottom: 8px; }
+.evidence-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+.evidence-meta { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
+.evidence-files { display: flex; gap: 8px; flex-wrap: wrap; }
+.file-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 4px; font-size: 11px; background: var(--bg3); }
+.file-tag img { width: 12px; height: 12px; }
+.evidence-actions { display: flex; gap: 8px; margin-top: 12px; }
+.evidence-actions .btn { flex: 1; text-align: center; }
+
+.export-section { background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); padding: 24px; margin-top: 24px; }
+.export-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+.export-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.export-option { background: var(--bg3); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+.export-option:hover { border-color: var(--accent); }
+.export-option.selected { border-color: var(--accent); background: rgba(30,111,255,0.1); }
+.export-icon { font-size: 32px; margin-bottom: 12px; }
+.export-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.export-desc { font-size: 12px; color: var(--text2); }
+.export-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+.setting-group { }
+.setting-label { font-size: 13px; color: var(--text2); margin-bottom: 8px; display: block; }
+.setting-select, .setting-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 6px; font-size: 13px; }
+
+.modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+.modal.show { display: flex; }
+.modal-content { background: var(--bg2); border-radius: 12px; width: 900px; max-height: 85vh; overflow: hidden; border: 1px solid var(--border); }
+.modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-close { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 6px; }
+.modal-close:hover { background: var(--bg3); }
+.modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+.modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+
+.evidence-detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.detail-card { background: var(--bg3); border-radius: 8px; padding: 16px; }
+.detail-title { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+.detail-value { font-size: 14px; }
+.preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+.preview-item { aspect-ratio: 16/9; background: var(--bg); border-radius: 6px; overflow: hidden; position: relative; }
+.preview-item img { width: 100%; height: 100%; object-fit: cover; }
+.preview-type { position: absolute; bottom: 4px; right: 4px; padding: 2px 6px; border-radius: 4px; font-size: 10px; background: rgba(0,0,0,0.7); }
+
+.desensitization-options { display: flex; gap: 12px; margin-top: 16px; }
+.desen-option { flex: 1; padding: 12px; background: var(--bg3); border-radius: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.desen-option input { width: 18px; height: 18px; }
+.desen-option.active { background: rgba(30,111,255,0.15); border: 1px solid var(--accent); }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-title">👁️ 巡查Agent</div>
+    <div class="logo-sub">智能视觉巡检系统</div>
+  </div>
+  <div class="nav">
+    <a href="index.html" class="nav-item"><span class="icon">💬</span>Agent调度舱</a>
+    <a href="incident.html" class="nav-item"><span class="icon">📋</span>事件闭环中心</a>
+    <a href="traceback.html" class="nav-item"><span class="icon">🔍</span>智能溯源</a>
+    <a href="cardamage.html" class="nav-item"><span class="icon">🚗</span>谁蹭了我的车</a>
+    <a href="assets.html" class="nav-item"><span class="icon">📂</span>巡查资产库</a>
+    <a href="sop-config.html" class="nav-item"><span class="icon">⚙️</span>SOP配置</a>
+    <a href="report.html" class="nav-item"><span class="icon">📊</span>巡查报告</a>
+    <a href="dashboard.html" class="nav-item"><span class="icon">📈</span>KPI看板</a>
+    <a href="skills.html" class="nav-item"><span class="icon">⚙️</span>技能库</a>
+    <a href="mobile.html" class="nav-item"><span class="icon">📱</span>移动端</a>
+    <a href="templates.html" class="nav-item"><span class="icon">📦</span>模板库</a>
+    <a href="workorder.html" class="nav-item"><span class="icon">📝</span>工单中心</a>
+    <a href="channels.html" class="nav-item"><span class="icon">🔗</span>消息通道</a>
+    <a href="audit.html" class="nav-item"><span class="icon">📜</span>审计日志</a>
+    <a href="permission.html" class="nav-item"><span class="icon">🔐</span>权限管理</a>
+    <div class="nav-item active"><span class="icon">📦</span>证据包</div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="status-dot"></div>
+    <span class="status-text">系统运行正常</span>
+  </div>
+</nav>
+
+<main class="main">
+  <header class="header">
+    <div class="header-title">📦 证据包管理</div>
+    <div style="display:flex;gap:12px;">
+      <button class="btn btn-outline">批量导出</button>
+      <button class="btn btn-primary">+ 生成证据包</button>
+    </div>
+  </header>
+  
+  <div class="content">
+    <!-- 统计 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">本月生成</div>
+        <div class="stat-value">342</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">已脱敏</div>
+        <div class="stat-value" style="color:var(--success)">289</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">待导出</div>
+        <div class="stat-value" style="color:var(--warning)">53</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">存储占用</div>
+        <div class="stat-value">12.4GB</div>
+      </div>
+    </div>
+    
+    <!-- 筛选 -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">事件类型</span>
+        <select class="filter-select">
+          <option>全部</option>
+          <option>消防通道占用</option>
+          <option>违停治理</option>
+          <option>电动车入梯</option>
+          <option>周界入侵</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">脱敏状态</span>
+        <select class="filter-select">
+          <option>全部</option>
+          <option>已脱敏</option>
+          <option>未脱敏</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">时间范围</span>
+        <input type="date" class="filter-input" value="2026-03-01">
+        <span style="color:var(--text2)">至</span>
+        <input type="date" class="filter-input" value="2026-03-11">
+      </div>
+      <div class="filter-group">
+        <input type="text" class="filter-input" placeholder="搜索证据包ID...">
+      </div>
+    </div>
+    
+    <!-- 证据包列表 -->
+    <div class="evidence-grid">
+      <div class="evidence-card" onclick="showEvidence('EV-20260311-001')">
+        <div class="evidence-img">
+          <div class="placeholder">🖼️</div>
+          <span class="evidence-badge">消防通道占用</span>
+        </div>
+        <div class="evidence-body">
+          <div class="evidence-id">EV-20260311-001</div>
+          <div class="evidence-title">A栋2单元楼道杂物堆放</div>
+          <div class="evidence-meta">2026-03-11 07:15 · 3个文件</div>
+          <div class="evidence-files">
+            <span class="file-tag">📷 IMG_001.jpg</span>
+            <span class="file-tag">🎬 clip_001.mp4</span>
+            <span class="file-tag">📄 report.pdf</span>
+          </div>
+          <div class="evidence-actions">
+            <button class="btn btn-outline btn-sm">预览</button>
+            <button class="btn btn-primary btn-sm">导出</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="evidence-card">
+        <div class="evidence-img">
+          <div class="placeholder">🖼️</div>
+          <span class="evidence-badge">违停治理</span>
+        </div>
+        <div class="evidence-body">
+          <div class="evidence-id">EV-20260311-002</div>
+          <div class="evidence-title">B区消防通道车辆违停</div>
+          <div class="evidence-meta">2026-03-11 06:30 · 4个文件</div>
+          <div class="evidence-files">
+            <span class="file-tag">📷 car_001.jpg</span>
+            <span class="file-tag">📷 car_002.jpg</span>
+            <span class="file-tag">🎬 video.mp4</span>
+          </div>
+          <div class="evidence-actions">
+            <button class="btn btn-outline btn-sm">预览</button>
+            <button class="btn btn-primary btn-sm">导出</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="evidence-card">
+        <div class="evidence-img">
+          <div class="placeholder">🖼️</div>
+          <span class="evidence-badge">电动车入梯</span>
+        </div>
+        <div class="evidence-body">
+          <div class="evidence-id">EV-20260310-089</div>
+          <div class="evidence-title">3号楼电梯厅电动车</div>
+          <div class="evidence-meta">2026-03-10 22:15 · 2个文件</div>
+          <div class="evidence-files">
+            <span class="file-tag">📷 elev_01.jpg</span>
+            <span class="file-tag">📄 report.pdf</span>
+          </div>
+          <div class="evidence-actions">
+            <button class="btn btn-outline btn-sm">预览</button>
+            <button class="btn btn-primary btn-sm">导出</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="evidence-card">
+        <div class="evidence-img">
+          <div class="placeholder">🖼️</div>
+          <span class="evidence-badge">周界入侵</span>
+        </div>
+        <div class="evidence-body">
+          <div class="evidence-id">EV-20260310-088</div>
+          <div class="evidence-title">东门围栏人员翻越</div>
+          <div class="evidence-meta">2026-03-10 23:55 · 5个文件</div>
+          <div class="evidence-files">
+            <span class="file-tag">📷 01.jpg</span>
+            <span class="file-tag">📷 02.jpg</span>
+            <span class="file-tag">🎬 01.mp4</span>
+          </div>
+          <div class="evidence-actions">
+            <button class="btn btn-outline btn-sm">预览</button>
+            <button class="btn btn-primary btn-sm">导出</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="evidence-card">
+        <div class="evidence-img">
+          <div class="placeholder">🖼️</div>
+          <span class="evidence-badge">聚集劝导</span>
+        </div>
+        <div class="evidence-body">
+          <div class="evidence-id">EV-20260310-087</div>
+          <div class="evidence-title">大堂门口人员聚集</div>
+          <div class="evidence-meta">2026-03-10 18:30 · 3个文件</div>
+          <div class="evidence-files">
+            <span class="file-tag">📷 crowd_1.jpg</span>
+            <span class="file-tag">📄 report.pdf</span>
+          </div>
+          <div class="evidence-actions">
+            <button class="btn btn-outline btn-sm">预览</button>
+            <button class="btn btn-primary btn-sm">导出</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="evidence-card">
+        <div class="evidence-img">
+          <div class="placeholder">🖼️</div>
+          <span class="evidence-badge">高空抛物</span>
+        </div>
+        <div class="evidence-body">
+          <div class="evidence-id">EV-20260310-086</div>
+          <div class="evidence-title">5号楼高空抛物记录</div>
+          <div class="evidence-meta">2026-03-10 16:20 · 6个文件</div>
+          <div class="evidence-files">
+            <span class="file-tag">📷 01.jpg</span>
+            <span class="file-tag">📷 02.jpg</span>
+            <span class="file-tag">+2</span>
+          </div>
+          <div class="evidence-actions">
+            <button class="btn btn-outline btn-sm">预览</button>
+            <button class="btn btn-primary btn-sm">导出</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 导出配置 -->
+    <div class="export-section">
+      <div class="export-title">📥 批量导出配置</div>
+      <div class="export-options">
+        <div class="export-option selected">
+          <div class="export-icon">📦</div>
+          <div class="export-name">ZIP压缩包</div>
+          <div class="export-desc">所有文件打包下载</div>
+        </div>
+        <div class="export-option">
+          <div class="export-icon">📄</div>
+          <div class="export-name">PDF报告</div>
+          <div class="export-desc">生成带证据的PDF</div>
+        </div>
+        <div class="export-option">
+          <div class="export-icon">🖼️</div>
+          <div class="export-name">图片长图</div>
+          <div class="export-desc">拼接为一张长图</div>
+        </div>
+        <div class="export-option">
+          <div class="export-icon">🔗</div>
+          <div class="export-name">云盘链接</div>
+          <div class="export-desc">上传至云存储</div>
+        </div>
+      </div>
+      <div class="export-settings">
+        <div class="setting-group">
+          <label class="setting-label">脱敏处理</label>
+          <div class="desensitization-options">
+            <label class="desen-option active">
+              <input type="radio" name="desen" checked> 人脸模糊
+            </label>
+            <label class="desen-option">
+              <input type="radio" name="desen"> 车牌模糊
+            </label>
+            <label class="desen-option">
+              <input type="radio" name="desen"> 全部模糊
+            </label>
+          </div>
+        </div>
+        <div class="setting-group">
+          <label class="setting-label">文件命名格式</label>
+          <select class="setting-select">
+            <option>证据包ID_日期 (EV-20260311-001_20260311)</option>
+            <option>事件类型_日期 (消防通道占用_20260311)</option>
+            <option>原始文件名保持</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:20px;text-align:right;">
+        <button class="btn btn-primary">开始导出选中 (12)</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 证据包详情弹窗 -->
+<div class="modal" id="evidenceModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">证据包详情 - EV-20260311-001</div>
+      <div class="modal-close" onclick="closeModal()">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="evidence-detail-grid">
+        <div class="detail-card">
+          <div class="detail-title">事件类型</div>
+          <div class="detail-value">消防通道占用</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-title">发生位置</div>
+          <div class="detail-value">A栋2单元楼道</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-title">发生时间</div>
+          <div class="detail-value">2026-03-11 07:15:22</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-title">关联事件</div>
+          <div class="detail-value"><a href="#" style="color:var(--accent)">INC-20260311-003</a></div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-title">脱敏状态</div>
+          <div class="detail-value" style="color:var(--success)">已脱敏 ✓</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-title">创建时间</div>
+          <div class="detail-value">2026-03-11 07:16:05</div>
+        </div>
+      </div>
+      
+      <div style="margin-top:20px;">
+        <div class="detail-title">证据预览</div>
+        <div class="preview-grid">
+          <div class="preview-item"><div class="placeholder">🖼️</div><span class="preview-type">JPG</span></div>
+          <div class="preview-item"><div class="placeholder">🎬</div><span class="preview-type">MP4</span></div>
+          <div class="preview-item"><div class="placeholder">📄</div><span class="preview-type">PDF</span></div>
+        </div>
+      </div>
+      
+      <div style="margin-top:20px;">
+        <div class="detail-title">证据文件列表</div>
+        <table style="width:100%;margin-top:12px;background:var(--bg3);border-radius:8px;">
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px;font-size:13px;">📷 IMG_001.jpg</td>
+            <td style="padding:12px;font-size:13px;color:var(--text2);">2.4MB</td>
+            <td style="padding:12px;font-size:13px;">已脱敏</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px;font-size:13px;">🎬 clip_001.mp4</td>
+            <td style="padding:12px;font-size:13px;color:var(--text2);">15.8MB</td>
+            <td style="padding:12px;font-size:13px;">已脱敏</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;font-size:13px;">📄 incident_report.pdf</td>
+            <td style="padding:12px;font-size:13px;color:var(--text2);">245KB</td>
+            <td style="padding:12px;font-size:13px;">-</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">关闭</button>
+      <button class="btn btn-outline">重新脱敏</button>
+      <button class="btn btn-primary">导出证据包</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showEvidence(id) {
+  document.getElementById('evidenceModal').classList.add('show');
+}
+function closeModal() {
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+}
+</script>
+</body>
+</html>

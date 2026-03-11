@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模板库 · 视觉智能巡查 Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a1628; --bg2: #0f2240; --bg3: #162b4a;
+  --accent: #1e6fff; --accent2: #00c2ff;
+  --text: #e8f0fe; --text2: #a0b4c8; --border: #1e3a5f;
+  --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
+  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); }
+.logo-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.nav { flex: 1; padding: 16px 0; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 14px; color: var(--text2); transition: all 0.2s; border-left: 3px solid transparent; text-decoration: none; cursor: pointer; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-badge { margin-left: auto; background: var(--danger); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0; }
+.topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+.topbar-title span { color: var(--accent2); }
+
+/* Tab */
+.tabs { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 24px; flex-shrink: 0; }
+.tab { padding: 12px 20px; font-size: 14px; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-count { font-size: 11px; background: var(--bg3); color: var(--text2); padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
+
+.body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+/* 模板网格 */
+.tpl-section { margin-bottom: 28px; }
+.tpl-section-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+
+/* 模板卡 */
+.tpl-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.2s; position: relative; }
+.tpl-card:hover { border-color: var(--accent); box-shadow: 0 6px 24px rgba(30,111,255,0.12); transform: translateY(-2px); }
+.tpl-card.featured { border-color: rgba(255,184,0,0.4); }
+.tpl-featured-badge { position: absolute; top: 10px; right: 10px; background: var(--warning); color: #000; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px; }
+.tpl-preview { height: 90px; display: flex; align-items: center; justify-content: center; font-size: 36px; position: relative; overflow: hidden; }
+.tpl-header { padding: 12px 14px 8px; }
+.tpl-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.tpl-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.tpl-tags { display: flex; gap: 4px; flex-wrap: wrap; padding: 0 14px 8px; }
+.tpl-tag { font-size: 11px; padding: 2px 7px; background: var(--bg3); border-radius: 8px; color: var(--text2); }
+.tpl-footer { display: flex; align-items: center; padding: 8px 14px; border-top: 1px solid var(--border); gap: 8px; }
+.tpl-uses { font-size: 11px; color: var(--text2); flex: 1; }
+.tpl-scene { font-size: 11px; padding: 2px 7px; border-radius: 8px; }
+.tpl-scene.garden { background: rgba(0,217,126,0.1); color: var(--success); }
+.tpl-scene.property { background: rgba(30,111,255,0.1); color: var(--accent); }
+.tpl-scene.police { background: rgba(255,71,87,0.1); color: var(--danger); }
+.tpl-scene.all { background: rgba(255,184,0,0.1); color: var(--warning); }
+.tpl-use-btn { padding: 5px 14px; background: var(--accent); border: none; border-radius: 6px; color: #fff; font-size: 12px; cursor: pointer; font-family: var(--font); font-weight: 600; }
+
+/* 添加模板 */
+.tpl-add { background: transparent; border: 2px dashed var(--border); border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; min-height: 200px; cursor: pointer; transition: all 0.2s; }
+.tpl-add:hover { border-color: var(--accent); background: rgba(30,111,255,0.04); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.page-nav { background: var(--bg2); border-top: 1px solid var(--border); padding: 10px 24px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.page-nav span { font-size: 12px; color: var(--text2); }
+.page-link { padding: 4px 12px; border-radius: 14px; font-size: 12px; color: var(--text2); text-decoration: none; border: 1px solid var(--border); transition: all 0.2s; }
+.page-link:hover, .page-link.current { border-color: var(--accent); color: var(--accent); background: rgba(30,111,255,0.08); }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo"><div class="logo-title">🔭 巡查 Agent</div><div class="logo-sub">视觉智能运营平台</div></div>
+  <nav class="nav">
+    <a href="index.html" class="nav-item"><span class="icon">💬</span> Agent调度舱</a>
+    <a href="incident.html" class="nav-item"><span class="icon">📋</span> 事件闭环中心 <span class="nav-badge">7</span></a>
+    <a href="traceback.html" class="nav-item"><span class="icon">🔍</span> 智能溯源工作台</a>
+    <a href="assets.html" class="nav-item"><span class="icon">📂</span> 巡查资产库</a>
+    <div class="nav-item active"><span class="icon">📦</span> 模板库</div>
+    <a href="report.html" class="nav-item"><span class="icon">📊</span> 巡查报告</a>
+    <a href="dashboard.html" class="nav-item"><span class="icon">📈</span> KPI看板</a>
+    <a href="skills.html" class="nav-item"><span class="icon">⚙️</span> 技能库管理</a>
+  </nav>
+  <div class="sidebar-footer"><span class="status-dot"></span><span style="font-size:12px;color:var(--text2)">Agent运行中 · 23路在线</span></div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">场景 <span>模板库</span></div>
+    <span style="font-size:13px;color:var(--text2)">开箱即用 · 场景包快速复制 · 一键部署</span>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button style="padding:6px 16px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:13px;cursor:pointer;font-family:var(--font)">🔍 搜索</button>
+      <button style="padding:6px 16px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:13px;cursor:pointer;font-family:var(--font)">+ 创建模板</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active">🗺️ 巡检路线 <span class="tab-count">8</span></div>
+    <div class="tab">🛡️ 布防方案 <span class="tab-count">12</span></div>
+    <div class="tab">📄 报告模板 <span class="tab-count">6</span></div>
+    <div class="tab">⚡ 处置剧本 <span class="tab-count">20</span></div>
+    <div class="tab">📦 场景包 <span class="tab-count">4</span></div>
+  </div>
+
+  <div class="body">
+
+    <!-- 官方推荐 -->
+    <div class="tpl-section">
+      <div class="tpl-section-title">⭐ 官方推荐模板</div>
+      <div class="tpl-grid">
+
+        <div class="tpl-card featured">
+          <div class="tpl-featured-badge">🔥 热门</div>
+          <div class="tpl-preview" style="background:linear-gradient(135deg,#0f2240,#1a3a5c)">🌙</div>
+          <div class="tpl-header">
+            <div class="tpl-name">夜间周界巡查路线</div>
+            <div class="tpl-desc">覆盖所有周界关键点位，每30分钟一轮，异常自动派单+证据保存</div>
+          </div>
+          <div class="tpl-tags">
+            <span class="tpl-tag">周界安全</span>
+            <span class="tpl-tag">翻越检测</span>
+            <span class="tpl-tag">夜间</span>
+          </div>
+          <div class="tpl-footer">
+            <span class="tpl-uses">已被 <strong>347</strong> 个项目使用</span>
+            <span class="tpl-scene all">通用</span>
+            <button class="tpl-use-btn">使用</button>
+          </div>
+        </div>
+
+        <div class="tpl-card featured">
+          <div class="tpl-featured-badge">热门</div>
+          <div class="tpl-preview" style="background:linear-gradient(135deg,#1a0a0a,#2a1010)">🔥</div>
+          <div class="tpl-header">
+            <div class="tpl-name">消防安全全面巡查</div>
+            <div class="tpl-desc">每日3次消防通道、设备房、楼道巡查，SLA 24h自动复核</div>
+          </div>
+          <div class="tpl-tags">
+            <span class="tpl-tag">消防通道</span>
+            <span class="tpl-tag">杂物检测</span>
+            <span class="tpl-tag">24h复核</span>
+          </div>
+          <div class="tpl-footer">
+            <span class="tpl-uses">已被 <strong>512</strong> 个项目使用</span>
+            <span class="tpl-scene all">通用</span>
+            <button class="tpl-use-btn">使用</button>
+          </div>
+        </div>
+
+        <div class="tpl-card">
+          <div class="tpl-preview" style="background:linear-gradient(135deg,#102814,#1a3820)">🚗</div>
+          <div class="tpl-header">
+            <div class="tpl-name">停车场秩序治理</div>
+            <div class="tpl-desc">违停5分钟派单，同车牌30天第3次自动升级，月度复发清单</div>
+          </div>
+          <div class="tpl-tags">
+            <span class="tpl-tag">车牌识别</span>
+            <span class="tpl-tag">违停</span>
+            <span class="tpl-tag">复发治理</span>
+          </div>
+          <div class="tpl-footer">
+            <span class="tpl-uses">已被 <strong>289</strong> 个项目使用</span>
+            <span class="tpl-scene garden">园区</span>
+            <button class="tpl-use-btn">使用</button>
+          </div>
+        </div>
+
+        <div class="tpl-card">
+          <div class="tpl-preview" style="background:linear-gradient(135deg,#0f1e28,#1a2a3a)">🏢</div>
+          <div class="tpl-header">
+            <div class="tpl-name">晚高峰秩序巡查</div>
+            <div class="tpl-desc">18:00-21:00前台/大堂加密巡查，聚集/徘徊即触发，周报自动发业委会</div>
+          </div>
+          <div class="tpl-tags">
+            <span class="tpl-tag">晚高峰</span>
+            <span class="tpl-tag">人员聚集</span>
+            <span class="tpl-tag">业主报告</span>
+          </div>
+          <div class="tpl-footer">
+            <span class="tpl-uses">已被 <strong>156</strong> 个项目使用</span>
+            <span class="tpl-scene property">物业</span>
+            <button class="tpl-use-btn">使用</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 活动保障 -->
+    <div class="tpl-section">
+      <div class="tpl-section-title">🎪 活动保障模板</div>
+      <div class="tpl-grid">
+
+        <div class="tpl-card">
+          <div class="tpl-preview" style="background:linear-gradient(135deg,#1a1040,#2a2050)">🎵</div>
+          <div class="tpl-header">
+            <div class="tpl-name">大型演出活动安保</div>
+            <div class="tpl-desc">3条巡查路线+30分钟态势简报+异常热区推送，活动结束自动生成复盘报告</div>
+          </div>
+          <div class="tpl-tags">
+            <span class="tpl-tag">人群聚集</span>
+            <span class="tpl-tag">遗留物</span>
+            <span class="tpl-tag">态势简报</span>
+          </div>
+          <div class="tpl-footer">
+            <span class="tpl-uses">已被 <strong>67</strong> 个项目使用</span>
+            <span class="tpl-scene police">公安</span>
+            <button class="tpl-use-btn">使用</button>
+          </div>
+        </div>
+
+        <div class="tpl-card">
+          <div class="tpl-preview" style="background:linear-gradient(135deg,#101840,#1a2050)">🏢</div>
+          <div class="tpl-header">
+            <div class="tpl-name">园区开放日保障</div>
+            <div class="tpl-desc">外来访客管控+每小时简报+活动区域加密巡查，对外可交付运营报告</div>
+          </div>
+          <div class="tpl-tags">
+            <span class="tpl-tag">访客管理</span>
+            <span class="tpl-tag">小时简报</span>
+          </div>
+          <div class="tpl-footer">
+            <span class="tpl-uses">已被 <strong>43</strong> 个项目使用</span>
+            <span class="tpl-scene garden">园区</span>
+            <button class="tpl-use-btn">使用</button>
+          </div>
+        </div>
+
+        <div class="tpl-card">
+          <div class="tpl-preview" style="background:linear-gradient(135deg,#1a0a14,#2a1428)">🚨</div>
+          <div class="tpl-header">
+            <div class="tpl-name">重点区域专项治理</div>
+            <div class="tpl-desc">针对反复出现问题的点位/主体，4次/日巡查+复发升级+月度治理报告</div>
+          </div>
+          <div class="tpl-tags">
+            <span class="tpl-tag">复发追踪</span>
+            <span class="tpl-tag">升级策略</span>
+            <span class="tpl-tag">证据链</span>
+          </div>
+          <div class="tpl-footer">
+            <span class="tpl-uses">已被 <strong>91</strong> 个项目使用</span>
+            <span class="tpl-scene police">公安</span>
+            <button class="tpl-use-btn">使用</button>
+          </div>
+        </div>
+
+        <div class="tpl-add">
+          <div style="font-size:32px">📦</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text)">创建自定义模板</div>
+          <div style="font-size:12px;color:var(--text2)">把你的最佳实践变成可复用资产</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 场景包（一键部署） -->
+    <div class="tpl-section">
+      <div class="tpl-section-title">📦 场景包 <span style="font-size:12px;color:var(--text2);font-weight:400">— 一键部署完整解决方案</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(0,217,126,0.4)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="padding:16px 18px;background:rgba(0,217,126,0.06);border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;">
+            <div style="font-size:28px">🏢</div>
+            <div><div style="font-size:15px;font-weight:700;">物业智慧运营包</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">适合住宅小区/综合体，开箱即用</div></div>
+            <div style="margin-left:auto;padding:4px 12px;background:rgba(0,217,126,0.15);border:1px solid rgba(0,217,126,0.3);border-radius:8px;font-size:12px;color:var(--success);">一键部署</div>
+          </div>
+          <div style="padding:14px 18px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+              <span style="font-size:11px;padding:2px 7px;background:var(--bg3);border-radius:8px;color:var(--text2)">5条巡查路线</span>
+              <span style="font-size:11px;padding:2px 7px;background:var(--bg3);border-radius:8px;color:var(--text2)">8个布防方案</span>
+              <span style="font-size:11px;padding:2px 7px;background:var(--bg3);border-radius:8px;color:var(--text2)">3种报告模板</span>
+              <span style="font-size:11px;padding:2px 7px;background:var(--bg3);border-radius:8px;color:var(--text2)">12个处置剧本</span>
+            </div>
+            <div style="font-size:12px;color:var(--text2);">覆盖：电动车入梯/消防通道/公共秩序/访客管理/停车场，已被<strong style="color:var(--text)">127</strong>个物业项目验证</div>
+          </div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(30,111,255,0.4)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="padding:16px 18px;background:rgba(30,111,255,0.06);border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;">
+            <div style="font-size:28px">🏭</div>
+            <div><div style="font-size:15px;font-weight:700;">产业园区安防包</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">适合写字楼/厂区/产业园</div></div>
+            <div style="margin-left:auto;padding:4px 12px;background:rgba(30,111,255,0.15);border:1px solid rgba(30,111,255,0.3);border-radius:8px;font-size:12px;color:var(--accent);">一键部署</div>
+          </div>
+          <div style="padding:14px 18px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+              <span style="font-size:11px;padding:2px 7px;background:var(--bg3);border-radius:8px;color:var(--text2)">周界巡查路线</span>
+              <span style="font-size:11px;padding:2px 7px;background:var(--bg3);border-radius:8px;color:var(--text2)">门禁安全方案</span>
+              <span style="font-size:11px;padding:2px 7px;background:var(--bg3);border-radius:8px;color:var(--text2)">机房保护规则</span>
+              <span style="font-size:11px;padding:2px 7px;background:var(--bg3);border-radius:8px;color:var(--text2)">停车秩序剧本</span>
+            </div>
+            <div style="font-size:12px;color:var(--text2);">覆盖：尾随入侵/夜间巡查/违停治理/访客管控，已被<strong style="color:var(--text)">89</strong>个园区项目验证</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="height:20px"></div>
+  </div>
+
+  <div class="page-nav">
+    <span>原型导航：</span>
+    <a class="page-link" href="index.html">💬 调度舱</a>
+    <a class="page-link" href="incident.html">📋 事件中心</a>
+    <a class="page-link" href="traceback.html">🔍 溯源工作台</a>
+    <a class="page-link" href="assets.html">📂 资产库</a>
+    <a class="page-link current">📦 模板库</a>
+    <a class="page-link" href="report.html">📊 报告中心</a>
+    <a class="page-link" href="dashboard.html">📈 KPI看板</a>
+    <a class="page-link" href="mobile.html">📱 移动端</a>
+    <a class="page-link" href="skills.html">⚙️ 技能库</a>
+  </div>
+</div>
+</body>
+</html>

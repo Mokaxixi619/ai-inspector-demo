@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理首页 · 视觉智能巡查Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a1628; --bg2: #0f2240; --bg3: #162b4a;
+  --accent: #1e6fff; --accent2: #00c2ff;
+  --text: #e8f0fe; --text2: #a0b4c8;
+  --border: #1e3a5f;
+  --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
+  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+
+.sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); letter-spacing: 1px; }
+.logo-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+.nav-group { margin-bottom: 16px; }
+.nav-group-title { padding: 8px 20px; font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; font-size: 14px; color: var(--text2); transition: all 0.2s; border-left: 3px solid transparent; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+.status-text { font-size: 12px; color: var(--text2); }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.header { height: 60px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+.header-title { font-size: 18px; font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.notification-btn { position: relative; width: 40px; height: 40px; border-radius: 10px; background: var(--bg3); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
+.notification-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--danger); border-radius: 50%; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+.user-info { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; }
+.user-name { font-size: 14px; }
+.user-role { font-size: 12px; color: var(--text2); }
+
+.content { flex: 1; padding: 24px; overflow-y: auto; }
+
+/* 欢迎区域 */
+.welcome-section { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.welcome-text h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+.welcome-text p { color: var(--text2); font-size: 14px; }
+.welcome-time { text-align: right; }
+.welcome-time .date { font-size: 20px; font-weight: 600; }
+.welcome-time .time { color: var(--text2); font-size: 14px; }
+
+/* 快捷入口 */
+.quick-access { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }
+.quick-card { background: var(--bg2); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+.quick-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.quick-icon { width: 48px; height: 48px; border-radius: 12px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.quick-icon.defense { background: rgba(30,111,255,0.15); }
+.quick-icon.watch { background: rgba(0,194,255,0.15); }
+.quick-icon.patrol { background: rgba(0,217,126,0.15); }
+.quick-icon.search { background: rgba(160,94,255,0.15); }
+.quick-icon.handle { background: rgba(255,184,0,0.15); }
+.quick-icon.analysis { background: rgba(160,180,200,0.15); }
+.quick-name { font-size: 14px; font-weight: 500; }
+
+/* 统计卡片 */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--bg2); border-radius: 12px; padding: 20px; border: 1px solid var(--border); display: flex; align-items: center; gap: 16px; }
+.stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.stat-icon.event { background: rgba(255,71,87,0.15); }
+.stat-icon.workorder { background: rgba(255,184,0,0.15); }
+.stat-icon.patrol { background: rgba(0,217,126,0.15); }
+.stat-icon.alert { background: rgba(30,111,255,0.15); }
+.stat-info { flex: 1; }
+.stat-label { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
+.stat-value { font-size: 28px; font-weight: 700; }
+.stat-trend { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+.stat-trend.up { color: var(--success); }
+.stat-trend.down { color: var(--danger); }
+
+/* 内容区两栏 */
+.content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+
+/* 事件列表 */
+.event-section { background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); }
+.section-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.section-title { font-size: 15px; font-weight: 600; }
+.section-more { font-size: 13px; color: var(--accent); cursor: pointer; }
+.event-list { padding: 8px 0; }
+.event-item { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+.event-item:hover { background: rgba(30,111,255,0.05); }
+.event-item:last-child { border-bottom: none; }
+.event-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.event-icon.fire { background: rgba(255,71,87,0.15); }
+.event-icon.car { background: rgba(255,184,0,0.15); }
+.event-icon.elevator { background: rgba(30,111,255,0.15); }
+.event-icon.circle { background: rgba(160,94,255,0.15); }
+.event-info { flex: 1; }
+.event-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.event-meta { font-size: 12px; color: var(--text2); }
+.event-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; }
+.status-pending { background: rgba(255,184,0,0.15); color: var(--warning); }
+.status-processing { background: rgba(30,111,255,0.15); color: var(--accent); }
+.status-done { background: rgba(0,217,126,0.15); color: var(--success); }
+
+/* 提醒事项 */
+.reminder-section { background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); }
+.reminder-list { padding: 12px 20px; }
+.reminder-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.reminder-item:last-child { border-bottom: none; }
+.reminder-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.reminder-icon.warning { background: rgba(255,184,0,0.15); }
+.reminder-icon.danger { background: rgba(255,71,87,0.15); }
+.reminder-icon.info { background: rgba(30,111,255,0.15); }
+.reminder-content { flex: 1; }
+.reminder-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.reminder-desc { font-size: 12px; color: var(--text2); }
+.reminder-time { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+/* 巡查状态 */
+.patrol-status { margin-top: 24px; background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); }
+.patrol-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.patrol-progress { padding: 20px; }
+.progress-bar { height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--success), var(--accent2)); border-radius: 4px; transition: width 0.5s; }
+.progress-info { display: flex; justify-content: space-between; font-size: 13px; }
+.progress-text { color: var(--text2); }
+.progress-value { font-weight: 600; }
+.patrol-routes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+.route-item { background: var(--bg3); padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
+.route-status { width: 8px; height: 8px; border-radius: 50%; }
+.route-status.running { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.route-status.waiting { background: var(--text2); }
+.route-name { font-size: 13px; }
+.route-progress { font-size: 12px; color: var(--text2); }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-title">👁️ 巡查Agent</div>
+    <div class="logo-sub">智能视觉巡检系统</div>
+  </div>
+  <div class="nav">
+    <div class="nav-group">
+      <div class="nav-group-title">🎯 首页</div>
+      <div class="nav-item active"><span class="icon">🏠</span>管理首页</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">🛡️ 布防</div>
+      <a href="templates.html" class="nav-item"><span class="icon">📦</span>模板库</a>
+      <a href="sop-config.html" class="nav-item"><span class="icon">⚙️</span>SOP配置</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">👀 盯防</div>
+      <a href="index.html" class="nav-item"><span class="icon">💬</span>Agent调度舱</a>
+      <a href="tasks.html" class="nav-item"><span class="icon">📋</span>任务记录</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">🔄 巡查</div>
+      <a href="assets.html" class="nav-item"><span class="icon">📂</span>巡查资产库</a>
+      <a href="report.html" class="nav-item"><span class="icon">📊</span>巡查报告</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">🔍 倒查</div>
+      <a href="traceback.html" class="nav-item"><span class="icon">🔍</span>智能溯源</a>
+      <a href="cardamage.html" class="nav-item"><span class="icon">🚗</span>谁蹭了我的车</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">⚡ 处置</div>
+      <a href="incident.html" class="nav-item"><span class="icon">📋</span>事件中心</a>
+      <a href="workorder.html" class="nav-item"><span class="icon">📝</span>工单中心</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">📊 分析</div>
+      <a href="dashboard.html" class="nav-item"><span class="icon">📈</span>KPI看板</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">⚙️ 系统</div>
+      <a href="permission.html" class="nav-item"><span class="icon">🔐</span>权限管理</a>
+      <a href="audit.html" class="nav-item"><span class="icon">📜</span>审计日志</a>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="status-dot"></div>
+    <span class="status-text">系统运行正常</span>
+  </div>
+</nav>
+
+<main class="main">
+  <header class="header">
+    <div class="header-title">🎯 管理首页</div>
+    <div class="header-right">
+      <div class="notification-btn">
+        🔔
+        <div class="notification-badge">3</div>
+      </div>
+      <div class="user-info">
+        <div class="user-avatar">管</div>
+        <div>
+          <div class="user-name">管理员</div>
+          <div class="user-role">超级管理员</div>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <div class="content">
+    <!-- 欢迎区域 -->
+    <div class="welcome-section">
+      <div class="welcome-text">
+        <h1>早上好，管理员 👋</h1>
+        <p>今天园区一切正常，5个盯防任务进行中</p>
+      </div>
+      <div class="welcome-time">
+        <div class="date">2026年3月11日</div>
+        <div class="time">星期三 08:02</div>
+      </div>
+    </div>
+    
+    <!-- 快捷入口 -->
+    <div class="quick-access">
+      <div class="quick-card" onclick="location.href='templates.html'">
+        <div class="quick-icon defense">🛡️</div>
+        <div class="quick-name">布防配置</div>
+      </div>
+      <div class="quick-card" onclick="location.href="index.html"">
+        <div class="quick-icon watch">👀</div>
+        <div class="quick-name">下盯防任务</div>
+      </div>
+      <div class="quick-card" onclick="location.href="assets.html"">
+        <div class="quick-icon patrol">🔄</div>
+        <div class="quick-name">巡查资产</div>
+      </div>
+      <div class="quick-card" onclick="location.href="traceback.html"">
+        <div class="quick-icon search">🔍</div>
+        <div class="quick-name">智能溯源</div>
+      </div>
+      <div class="quick-card" onclick="location.href='workorder.html'">
+        <div class="quick-icon handle">⚡</div>
+        <div class="quick-name">处理工单</div>
+      </div>
+      <div class="quick-card" onclick="location.href="dashboard.html"">
+        <div class="quick-icon analysis">📊</div>
+        <div class="quick-name">查看分析</div>
+      </div>
+    </div>
+    
+    <!-- 统计卡片 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon event">🔥</div>
+        <div class="stat-info">
+          <div class="stat-label">待处理事件</div>
+          <div class="stat-value">23</div>
+          <div class="stat-trend up">↑ 12% 较昨日</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon workorder">📝</div>
+        <div class="stat-info">
+          <div class="stat-label">超时工单</div>
+          <div class="stat-value" style="color:var(--warning)">4</div>
+          <div class="stat-trend down">↓ 2 较昨日</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon patrol">🔄</div>
+        <div class="stat-info">
+          <div class="stat-label">巡查覆盖率</div>
+          <div class="stat-value" style="color:var(--success)">96.8%</div>
+          <div class="stat-trend up">↑ 1.2%</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon alert">⚠️</div>
+        <div class="stat-info">
+          <div class="stat-label">今日告警</div>
+          <div class="stat-value">156</div>
+          <div class="stat-trend down">↓ 8% 较昨日</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 内容区 -->
+    <div class="content-grid">
+      <!-- 左侧 -->
+      <div>
+        <!-- 事件列表 -->
+        <div class="event-section">
+          <div class="section-header">
+            <div class="section-title">📋 待处理事件</div>
+            <div class="section-more">查看全部 →</div>
+          </div>
+          <div class="event-list">
+            <div class="event-item">
+              <div class="event-icon fire">🔥</div>
+              <div class="event-info">
+                <div class="event-title">消防通道占用 - A栋2单元</div>
+                <div class="event-meta">2026-03-11 07:15 · A区</div>
+              </div>
+              <span class="event-status status-pending">待处理</span>
+            </div>
+            <div class="event-item">
+              <div class="event-icon car">🚗</div>
+              <div class="event-info">
+                <div class="event-title">车辆违停 - B区消防通道</div>
+                <div class="event-meta">2026-03-11 06:30 · B区</div>
+              </div>
+              <span class="event-status status-processing">处理中</span>
+            </div>
+            <div class="event-item">
+              <div class="event-icon elevator">🔋</div>
+              <div class="event-info">
+                <div class="event-title">电动车入梯 - 3号楼电梯厅</div>
+                <div class="event-meta">2026-03-11 06:48 · B区</div>
+              </div>
+              <span class="event-status status-processing">处理中</span>
+            </div>
+            <div class="event-item">
+              <div class="event-icon circle">👥</div>
+              <div class="event-info">
+                <div class="event-title">人员聚集 - 大堂门口</div>
+                <div class="event-meta">2026-03-11 06:30 · A区</div>
+              </div>
+              <span class="event-status status-done">已完结</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 巡查状态 -->
+        <div class="patrol-status">
+          <div class="patrol-header">
+            <div class="section-title">🔄 巡查状态</div>
+            <div class="section-more">巡查配置 →</div>
+          </div>
+          <div class="patrol-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 78%"></div>
+            </div>
+            <div class="progress-info">
+              <span class="progress-text">今日已完成 78%</span>
+              <span class="progress-value">156/200 巡查点</span>
+            </div>
+            <div class="patrol-routes">
+              <div class="route-item">
+                <div class="route-status running"></div>
+                <div>
+                  <div class="route-name">早高峰巡查</div>
+                  <div class="route-progress">进行中 (65%)</div>
+                </div>
+              </div>
+              <div class="route-item">
+                <div class="route-status waiting"></div>
+                <div>
+                  <div class="route-name">午间巡查</div>
+                  <div class="route-progress">等待中 (14:00)</div>
+                </div>
+              </div>
+              <div class="route-item">
+                <div class="route-status waiting"></div>
+                <div>
+                  <div class="route-name">夜巡</div>
+                  <div class="route-progress">等待中 (20:00)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 右侧 -->
+      <div>
+        <!-- 提醒事项 -->
+        <div class="reminder-section">
+          <div class="section-header">
+            <div class="section-title">⚠️ 提醒事项</div>
+          </div>
+          <div class="reminder-list">
+            <div class="reminder-item">
+              <div class="reminder-icon warning">⏰</div>
+              <div class="reminder-content">
+                <div class="reminder-title">工单即将超时</div>
+                <div class="reminder-desc">WO-20260311-003 预计15分钟后超时</div>
+                <div class="reminder-time">07:15</div>
+              </div>
+            </div>
+            <div class="reminder-item">
+              <div class="reminder-icon danger">🔄</div>
+              <div class="reminder-content">
+                <div class="reminder-title">复发提醒</div>
+                <div class="reminder-desc">B区消防通道本周第3次占用</div>
+                <div class="reminder-time">07:00</div>
+              </div>
+            </div>
+            <div class="reminder-item">
+              <div class="reminder-icon info">📊</div>
+              <div class="reminder-content">
+                <div class="reminder-title">日报生成完成</div>
+                <div class="reminder-desc">2026-03-10 巡查日报已生成</div>
+                <div class="reminder-time">昨天 06:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 快速操作 -->
+        <div class="reminder-section" style="margin-top: 24px;">
+          <div class="section-header">
+            <div class="section-title">⚡ 快速操作</div>
+          </div>
+          <div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 10px;">
+            <button class="btn" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:8px;text-align:left;cursor:pointer;">
+              ➕ 创建新的布防方案
+            </button>
+            <button class="btn" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:8px;text-align:left;cursor:pointer;">
+              👀 下达临时盯防任务
+            </button>
+            <button class="btn" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:8px;text-align:left;cursor:pointer;">
+              📊 生成本周报告
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<style>
+.btn { font-family: var(--font); font-size: 14px; transition: all 0.2s; }
+.btn:hover { background: var(--accent) !important; border-color: var(--accent) !important; }
+</style>
+</body>
+</html>

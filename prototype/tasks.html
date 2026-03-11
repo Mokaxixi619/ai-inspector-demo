@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>任务记录 · 视觉智能巡查Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a1628; --bg2: #0f2240; --bg3: #162b4a;
+  --accent: #1e6fff; --accent2: #00c2ff;
+  --text: #e8f0fe; --text2: #a0b4c8;
+  --border: #1e3a5f;
+  --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
+  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+
+.sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); letter-spacing: 1px; }
+.logo-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+.nav-group { margin-bottom: 16px; }
+.nav-group-title { padding: 8px 20px; font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; font-size: 14px; color: var(--text2); transition: all 0.2s; border-left: 3px solid transparent; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+.status-text { font-size: 12px; color: var(--text2); }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.header { height: 60px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+.header-title { font-size: 16px; font-weight: 600; }
+.btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #2a7fff; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--bg3); }
+.content { flex: 1; padding: 24px; overflow-y: auto; }
+
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--bg2); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
+.stat-label { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+.stat-value { font-size: 28px; font-weight: 700; }
+
+.filter-bar { background: var(--bg2); border-radius: 12px; padding: 16px 20px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; gap: 16px; align-items: center; }
+.filter-group { display: flex; align-items: center; gap: 8px; }
+.filter-label { font-size: 13px; color: var(--text2); }
+.filter-select, .filter-input { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+.filter-input { width: 180px; }
+
+.task-list { display: flex; flex-direction: column; gap: 16px; }
+.task-card { background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); padding: 20px; transition: all 0.2s; }
+.task-card:hover { border-color: var(--accent); }
+.task-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.task-info { flex: 1; }
+.task-id { font-family: monospace; color: var(--accent2); font-size: 13px; margin-bottom: 6px; }
+.task-title { font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+.task-desc { font-size: 13px; color: var(--text2); }
+.task-status { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.status-active { background: rgba(0,217,126,0.15); color: var(--success); }
+.status-completed { background: rgba(30,111,255,0.15); color: var(--accent); }
+.status-expired { background: rgba(255,71,87,0.15); color: var(--danger); }
+.task-meta { display: flex; gap: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+.task-meta-item { display: flex; align-items: center; gap: 8px; }
+.task-meta-label { font-size: 12px; color: var(--text2); }
+.task-meta-value { font-size: 13px; }
+.task-actions { display: flex; gap: 8px; margin-top: 16px; }
+.task-actions .btn { flex: 1; }
+
+.timeline { margin-top: 20px; padding-left: 20px; border-left: 2px solid var(--border); }
+.timeline-item { position: relative; padding-bottom: 20px; padding-left: 20px; }
+.timeline-item::before { content: ''; position: absolute; left: -25px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-time { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+.timeline-content { font-size: 13px; }
+.timeline-content strong { color: var(--text); }
+
+.modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+.modal.show { display: flex; }
+.modal-content { background: var(--bg2); border-radius: 12px; width: 700px; max-height: 85vh; overflow: hidden; border: 1px solid var(--border); }
+.modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-close { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 6px; }
+.modal-close:hover { background: var(--bg3); }
+.modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+.modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-title">👁️ 巡查Agent</div>
+    <div class="logo-sub">智能视觉巡检系统</div>
+  </div>
+  <div class="nav">
+    <div class="nav-group">
+      <div class="nav-group-title">🛡️ 布防</div>
+      <a href="templates.html" class="nav-item"><span class="icon">📦</span>模板库</a>
+      <a href="sop-config.html" class="nav-item"><span class="icon">⚙️</span>SOP配置</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">👀 盯防</div>
+      <a href="index.html" class="nav-item"><span class="icon">💬</span>Agent调度舱</a>
+      <div class="nav-item active"><span class="icon">📋</span>任务记录</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">🔄 巡查</div>
+      <a href="assets.html" class="nav-item"><span class="icon">📂</span>巡查资产库</a>
+      <a href="report.html" class="nav-item"><span class="icon">📊</span>巡查报告</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">🔍 倒查</div>
+      <a href="traceback.html" class="nav-item"><span class="icon">🔍</span>智能溯源</a>
+      <a href="cardamage.html" class="nav-item"><span class="icon">🚗</span>谁蹭了我的车</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">⚡ 处置</div>
+      <a href="incident.html" class="nav-item"><span class="icon">📋</span>事件中心</a>
+      <a href="workorder.html" class="nav-item"><span class="icon">📝</span>工单中心</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">📊 分析</div>
+      <a href="dashboard.html" class="nav-item"><span class="icon">📈</span>KPI看板</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">⚙️ 系统</div>
+      <a href="permission.html" class="nav-item"><span class="icon">🔐</span>权限管理</a>
+      <a href="audit.html" class="nav-item"><span class="icon">📜</span>审计日志</a>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="status-dot"></div>
+    <span class="status-text">系统运行正常</span>
+  </div>
+</nav>
+
+<main class="main">
+  <header class="header">
+    <div class="header-title">📋 任务记录 - 盯防任务</div>
+    <button class="btn btn-primary" onclick="showNewTask()">+ 新建盯防任务</button>
+  </header>
+  
+  <div class="content">
+    <!-- 统计 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">进行中任务</div>
+        <div class="stat-value" style="color:var(--success)">5</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">今日完成</div>
+        <div class="stat-value" style="color:var(--accent)">12</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">已超时</div>
+        <div class="stat-value" style="color:var(--danger)">2</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">本周任务总数</div>
+        <div class="stat-value">87</div>
+      </div>
+    </div>
+    
+    <!-- 筛选 -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">任务状态</span>
+        <select class="filter-select">
+          <option>全部</option>
+          <option>进行中</option>
+          <option>已完成</option>
+          <option>已超时</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">任务类型</span>
+        <select class="filter-select">
+          <option>全部</option>
+          <option>临时加强</option>
+          <option>专项治理</option>
+          <option>活动保障</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">时间范围</span>
+        <input type="date" class="filter-input" value="2026-03-11">
+        <span style="color:var(--text2)">至</span>
+        <input type="date" class="filter-input" value="2026-03-11">
+      </div>
+      <div class="filter-group" style="margin-left:auto;">
+        <input type="text" class="filter-input" placeholder="搜索任务...">
+      </div>
+    </div>
+    
+    <!-- 任务列表 -->
+    <div class="task-list">
+      <!-- 进行中任务 -->
+      <div class="task-card">
+        <div class="task-header">
+          <div class="task-info">
+            <div class="task-id">TASK-20260311-007</div>
+            <div class="task-title">今晚加强A区夜巡 - 防止人员翻越围栏</div>
+            <div class="task-desc">从今晚20:00到明早06:00，每30分钟巡查一次围栏区域，发现异常立即派单</div>
+          </div>
+          <span class="task-status status-active">进行中</span>
+        </div>
+        <div class="task-meta">
+          <div class="task-meta-item">
+            <span class="task-meta-label">📅 创建时间</span>
+            <span class="task-meta-value">2026-03-11 18:00</span>
+          </div>
+          <div class="task-meta-item">
+            <span class="task-meta-label">⏰ 执行时间</span>
+            <span class="task-meta-value">20:00 - 06:00</span>
+          </div>
+          <div class="task-meta-item">
+            <span class="task-meta-label">📍 巡查区域</span>
+            <span class="task-meta-value">A区围栏</span>
+          </div>
+          <div class="task-meta-item">
+            <span class="task-meta-label">⚡ 异常触发</span>
+            <span class="task-meta-value" style="color:var(--warning)">3次</span>
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="btn btn-outline" onclick="showTaskDetail('TASK-20260311-007')">查看详情</button>
+          <button class="btn btn-outline">暂停任务</button>
+          <button class="btn btn-primary">提前结束</button>
+        </div>
+      </div>
+      
+      <!-- 已完成任务 -->
+      <div class="task-card">
+        <div class="task-header">
+          <div class="task-info">
+            <div class="task-id">TASK-20260311-006</div>
+            <div class="task-title">演唱会活动保障 - 广场人群聚集巡查</div>
+            <div class="task-desc">每小时生成简报，重点关注人群聚集、逆行、遗留物</div>
+          </div>
+          <span class="task-status status-completed">已完成</span>
+        </div>
+        <div class="task-meta">
+          <div class="task-meta-item">
+            <span class="task-meta-label">📅 执行时间</span>
+            <span class="task-meta-value">09:00 - 18:00</span>
+          </div>
+          <div class="task-meta-item">
+            <span class="task-meta-label">📍 区域</span>
+            <span class="task-meta-value">广场&舞台周边</span>
+          </div>
+          <div class="task-meta-item">
+            <span class="task-meta-label">⚡ 异常数</span>
+            <span class="task-meta-value" style="color:var(--danger)">8次</span>
+          </div>
+          <div class="task-meta-item">
+            <span class="task-meta-label">📊 简报</span>
+            <span class="task-meta-value">10份</span>
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="btn btn-outline" onclick="showTaskDetail('TASK-20260311-006')">查看详情</button>
+          <button class="btn btn-primary">生成报告</button>
+        </div>
+      </div>
+      
+      <!-- 已超时任务 -->
+      <div class="task-card">
+        <div class="task-header">
+          <div class="task-info">
+            <div class="task-id">TASK-20260311-005</div>
+            <div class="task-title">B区消防通道占用专项巡查</div>
+            <div class="task-desc">每2小时巡查一次，发现占用立即派单，24小时内复核</div>
+          </div>
+          <span class="task-status status-expired">已超时</span>
+        </div>
+        <div class="task-meta">
+          <div class="task-meta-item">
+            <span class="task-meta-label">📅 创建时间</span>
+            <span class="task-meta-value">2026-03-10 09:00</span>
+          </div>
+          <div class="task-meta-item">
+            <span class="task-meta-label">⏰ 截止时间</span>
+            <span class="task-meta-value" style="color:var(--danger)">已超时 12h</span>
+          </div>
+          <div class="task-meta-item">
+            <span class="task-meta-label">📍 区域</span>
+            <span class="task-meta-value">B区消防通道</span>
+          </div>
+          <div class="task-meta-item">
+            <span class="task-meta-label">⚡ 异常</span>
+            <span class="task-meta-value">15次</span>
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="btn btn-outline">查看详情</button>
+          <button class="btn btn-outline" style="color:var(--danger)">重新启动</button>
+          <button class="btn btn-primary">生成报告</button>
+        </div>
+      </div>
+      
+      <!-- 更多任务... -->
+      <div class="task-card" style="opacity:0.7">
+        <div class="task-header">
+          <div class="task-info">
+            <div class="task-id">TASK-20260311-004</div>
+            <div class="task-title">早高峰大堂秩序巡查</div>
+            <div class="task-desc">07:00-09:00关注大堂门口聚集、占道</div>
+          </div>
+          <span class="task-status status-completed">已完成</span>
+        </div>
+        <div class="task-meta">
+          <div class="task-meta-item">
+            <span class="task-meta-label">执行时间</span>
+            <span class="task-meta-value">07:00-09:00</span>
+          </div>
+          <div class="task-meta-item">
+            <span class="task-meta-label">异常</span>
+            <span class="task-meta-value">2次</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 任务详情弹窗 -->
+<div class="modal" id="taskModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">任务详情 - TASK-20260311-007</div>
+      <div class="modal-close" onclick="closeModal()">✕</div>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px;">任务类型</div><div>临时加强</div></div>
+        <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px;">状态</div><span class="task-status status-active">进行中</span></div>
+        <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px;">创建人</div><div>保安队长</div></div>
+        <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px;">创建时间</div><div>2026-03-11 18:00</div></div>
+      </div>
+      
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px;">执行时间线</div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-time">18:00</div>
+          <div class="timeline-content">任务由 <strong>保安队长</strong> 创建</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">20:00</div>
+          <div class="timeline-content">任务开始执行，每30分钟巡查围栏区域</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">20:32</div>
+          <div class="timeline-content">发现异常：<strong>东门围栏有人徘徊</strong> → 已派单</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">21:05</div>
+          <div class="timeline-content">发现异常：<strong>北门围栏有滞留人员</strong> → 已派单</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">21:45</div>
+          <div class="timeline-content">发现异常：<strong>西门可疑物品遗留</strong> → 已派单</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">关闭</button>
+      <button class="btn btn-primary">导出任务报告</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTaskDetail(id) { document.getElementById('taskModal').classList.add('show'); }
+function showNewTask() { alert('跳转到Agent调度舱创建新任务'); }
+function closeModal() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('show')); }
+</script>
+</body>
+</html>

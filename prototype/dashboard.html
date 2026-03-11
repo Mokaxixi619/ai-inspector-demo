@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI管理看板 · 视觉智能巡查 Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a1628; --bg2: #0f2240; --bg3: #162b4a;
+  --accent: #1e6fff; --accent2: #00c2ff;
+  --text: #e8f0fe; --text2: #a0b4c8; --border: #1e3a5f;
+  --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
+  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); }
+.logo-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.nav { flex: 1; padding: 16px 0; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 14px; color: var(--text2); transition: all 0.2s; border-left: 3px solid transparent; text-decoration: none; cursor: pointer; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-badge { margin-left: auto; background: var(--danger); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0; }
+.topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+.topbar-title span { color: var(--accent2); }
+.body { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+
+/* 筛选栏 */
+.filter-bar { display: flex; gap: 10px; align-items: center; }
+.period-btn { padding: 6px 16px; border-radius: 16px; font-size: 13px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: var(--font); transition: all 0.2s; }
+.period-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.period-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+.grade-badge { padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: 700; }
+.grade-a { background: rgba(0,217,126,0.15); color: var(--success); border: 1px solid rgba(0,217,126,0.3); }
+
+/* 核心KPI */
+.kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.kpi-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; position: relative; overflow: hidden; }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.kpi-card.green::before { background: var(--success); }
+.kpi-card.blue::before { background: var(--accent); }
+.kpi-card.yellow::before { background: var(--warning); }
+.kpi-card.red::before { background: var(--danger); }
+.kpi-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+.kpi-num { font-size: 26px; font-weight: 700; line-height: 1; }
+.kpi-num.green { color: var(--success); }
+.kpi-num.blue { color: var(--accent2); }
+.kpi-num.yellow { color: var(--warning); }
+.kpi-num.red { color: var(--danger); }
+.kpi-trend { font-size: 11px; margin-top: 5px; display: flex; align-items: center; gap: 3px; }
+.trend-up { color: var(--success); }
+.trend-down { color: var(--danger); }
+.trend-flat { color: var(--text2); }
+.kpi-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.kpi-fill { height: 100%; border-radius: 2px; }
+
+/* 双列布局 */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* 图表卡片 */
+.chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.cc-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+.cc-sub { font-size: 12px; color: var(--text2); font-weight: 400; }
+
+/* 趋势折线图（CSS模拟） */
+.trend-chart { height: 100px; position: relative; display: flex; align-items: flex-end; gap: 4px; padding-bottom: 20px; }
+.trend-bar { flex: 1; border-radius: 3px 3px 0 0; position: relative; cursor: pointer; transition: all 0.2s; min-width: 0; }
+.trend-bar:hover { opacity: 0.8; }
+.trend-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 9px; color: var(--text2); white-space: nowrap; }
+
+/* 排行榜 */
+.rank-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; margin-bottom: 5px; transition: all 0.2s; cursor: pointer; }
+.rank-item:hover { background: var(--bg3); }
+.rank-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.rank-1 { background: #FFD700; color: #000; }
+.rank-2 { background: #C0C0C0; color: #000; }
+.rank-3 { background: #CD7F32; color: #000; }
+.rank-other { background: var(--bg3); color: var(--text2); }
+.rank-info { flex: 1; }
+.rank-name { font-size: 13px; }
+.rank-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.rank-score { font-size: 16px; font-weight: 700; text-align: right; }
+
+/* 热力矩阵 */
+.heatmap { display: grid; grid-template-columns: 40px repeat(12, 1fr); gap: 3px; }
+.hm-label { font-size: 10px; color: var(--text2); display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; }
+.hm-cell { height: 22px; border-radius: 3px; cursor: pointer; transition: all 0.2s; position: relative; }
+.hm-cell:hover { opacity: 0.8; transform: scale(1.1); }
+.hm-header { font-size: 9px; color: var(--text2); text-align: center; height: 16px; display: flex; align-items: center; justify-content: center; }
+
+/* 指标达标 */
+.metric-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.metric-row:last-child { border-bottom: none; }
+.metric-name { font-size: 13px; flex: 1; }
+.metric-target { font-size: 12px; color: var(--text2); width: 70px; text-align: right; }
+.metric-actual { font-size: 13px; font-weight: 700; width: 60px; text-align: right; }
+.metric-bar-wrap { width: 100px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.metric-bar-fill { height: 100%; border-radius: 3px; }
+.metric-icon { font-size: 14px; width: 20px; text-align: center; }
+
+/* 告警看板 */
+.alert-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg3); border-radius: 8px; margin-bottom: 5px; }
+.alert-icon { font-size: 16px; }
+.alert-content { flex: 1; font-size: 13px; }
+.alert-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.alert-action { font-size: 12px; color: var(--accent); cursor: pointer; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.page-nav { background: var(--bg2); border-top: 1px solid var(--border); padding: 10px 24px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.page-nav span { font-size: 12px; color: var(--text2); }
+.page-link { padding: 4px 12px; border-radius: 14px; font-size: 12px; color: var(--text2); text-decoration: none; border: 1px solid var(--border); transition: all 0.2s; }
+.page-link:hover, .page-link.current { border-color: var(--accent); color: var(--accent); background: rgba(30,111,255,0.08); }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo"><div class="logo-title">🔭 巡查 Agent</div><div class="logo-sub">视觉智能运营平台</div></div>
+  <nav class="nav">
+    <a href="index.html" class="nav-item"><span class="icon">💬</span> Agent调度舱</a>
+    <a href="incident.html" class="nav-item"><span class="icon">📋</span> 事件闭环中心 <span class="nav-badge">7</span></a>
+    <a href="traceback.html" class="nav-item"><span class="icon">🔍</span> 智能溯源工作台</a>
+    <a href="assets.html" class="nav-item"><span class="icon">📂</span> 巡查资产库</a>
+    <a href="report.html" class="nav-item"><span class="icon">📊</span> 巡查报告</a>
+    <div class="nav-item active"><span class="icon">📈</span> KPI管理看板</div>
+    <a href="skills.html" class="nav-item"><span class="icon">⚙️</span> 技能库管理</a>
+  </nav>
+  <div class="sidebar-footer"><span class="status-dot"></span><span style="font-size:12px;color:var(--text2)">Agent运行中 · 23路在线</span></div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">KPI <span>管理看板</span></div>
+    <div class="filter-bar">
+      <button class="period-btn">今日</button>
+      <button class="period-btn active">本周</button>
+      <button class="period-btn">本月</button>
+      <button class="period-btn">自定义</button>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:13px;color:var(--text2)">综合评级</span>
+      <span class="grade-badge grade-a">A 优秀</span>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- 核心KPI -->
+    <div class="kpi-grid">
+      <div class="kpi-card green">
+        <div class="kpi-label">路线覆盖率</div>
+        <div class="kpi-num green">98%</div>
+        <div class="kpi-trend trend-up">↑ 较上周 +3%</div>
+        <div class="kpi-bar"><div class="kpi-fill" style="width:98%;background:var(--success)"></div></div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">有效巡查次数</div>
+        <div class="kpi-num blue">847</div>
+        <div class="kpi-trend trend-up">↑ 较上周 +12%</div>
+        <div class="kpi-bar"><div class="kpi-fill" style="width:92%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">平均响应时效</div>
+        <div class="kpi-num yellow">8.4<span style="font-size:14px">分</span></div>
+        <div class="kpi-trend trend-up">↑ 较上周缩短2.1分</div>
+        <div class="kpi-bar"><div class="kpi-fill" style="width:72%;background:var(--warning)"></div></div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">事件完结率</div>
+        <div class="kpi-num green">94%</div>
+        <div class="kpi-trend trend-up">↑ 较上周 +5%</div>
+        <div class="kpi-bar"><div class="kpi-fill" style="width:94%;background:var(--success)"></div></div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">误报率</div>
+        <div class="kpi-num" style="color:var(--success)">3%</div>
+        <div class="kpi-trend trend-up">↓ 较上周 -1.2%</div>
+        <div class="kpi-bar"><div class="kpi-fill" style="width:3%;background:var(--danger)"></div></div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">复发率</div>
+        <div class="kpi-num yellow">12%</div>
+        <div class="kpi-trend trend-down">↑ 较上周 +2%</div>
+        <div class="kpi-bar"><div class="kpi-fill" style="width:12%;background:var(--warning)"></div></div>
+      </div>
+    </div>
+
+    <!-- 趋势 + 排行 -->
+    <div class="two-col">
+
+      <!-- 事件趋势 -->
+      <div class="chart-card">
+        <div class="cc-title">📈 本周异常事件趋势 <span class="cc-sub">按日统计</span></div>
+        <div class="trend-chart">
+          <div class="trend-bar" style="height:40%;background:rgba(30,111,255,0.5)"><div class="trend-label">周一</div></div>
+          <div class="trend-bar" style="height:65%;background:rgba(255,184,0,0.6)"><div class="trend-label">周二</div></div>
+          <div class="trend-bar" style="height:30%;background:rgba(30,111,255,0.5)"><div class="trend-label">周三</div></div>
+          <div class="trend-bar" style="height:80%;background:rgba(255,71,87,0.6)"><div class="trend-label">周四</div></div>
+          <div class="trend-bar" style="height:55%;background:rgba(255,184,0,0.6)"><div class="trend-label">周五</div></div>
+          <div class="trend-bar" style="height:25%;background:rgba(30,111,255,0.5)"><div class="trend-label">周六</div></div>
+          <div class="trend-bar" style="height:90%;background:rgba(255,71,87,0.7);border:1px solid var(--danger)"><div class="trend-label" style="color:var(--danger)">今天</div></div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--text2);">
+          <span>本周总计 <strong style="color:var(--text)">43</strong> 条</span>
+          <span>日均 <strong style="color:var(--text)">6.1</strong> 条</span>
+          <span>最高 <strong style="color:var(--danger)">11</strong> 条（今天）</span>
+        </div>
+      </div>
+
+      <!-- 处置效率 -->
+      <div class="chart-card">
+        <div class="cc-title">⚡ 处置时效分布 <span class="cc-sub">本周43条事件</span></div>
+        <div style="display:flex;gap:0;height:100px;align-items:flex-end;margin-bottom:8px;">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="background:var(--success);border-radius:3px 3px 0 0;width:80%;height:75%"></div>
+            <div style="font-size:10px;color:var(--text2)">≤5分</div>
+            <div style="font-size:12px;font-weight:700;color:var(--success)">52%</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="background:rgba(30,111,255,0.7);border-radius:3px 3px 0 0;width:80%;height:40%"></div>
+            <div style="font-size:10px;color:var(--text2)">5-15分</div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent)">32%</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="background:rgba(255,184,0,0.7);border-radius:3px 3px 0 0;width:80%;height:18%"></div>
+            <div style="font-size:10px;color:var(--text2)">15-30分</div>
+            <div style="font-size:12px;font-weight:700;color:var(--warning)">12%</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="background:rgba(255,71,87,0.7);border-radius:3px 3px 0 0;width:80%;height:8%"></div>
+            <div style="font-size:10px;color:var(--text2)">&gt;30分</div>
+            <div style="font-size:12px;font-weight:700;color:var(--danger)">4%</div>
+          </div>
+        </div>
+        <div style="background:rgba(0,217,126,0.06);border:1px solid rgba(0,217,126,0.2);border-radius:6px;padding:8px;font-size:12px;color:var(--success);">
+          ✅ SLA目标15分钟内处置率：84%（目标≥80%，达标）
+        </div>
+      </div>
+    </div>
+
+    <!-- 区域排行 + 指标达标 + 告警 -->
+    <div class="three-col">
+
+      <!-- 区域排行 -->
+      <div class="chart-card">
+        <div class="cc-title">🏆 区域安全评分排行 <span class="cc-sub">本周</span></div>
+        <div class="rank-item">
+          <div class="rank-num rank-1">1</div>
+          <div class="rank-info"><div class="rank-name">停车场区域</div><div class="rank-meta">事件少 · 响应快 · 零复发</div></div>
+          <div class="rank-score" style="color:var(--success)">97</div>
+        </div>
+        <div class="rank-item">
+          <div class="rank-num rank-2">2</div>
+          <div class="rank-info"><div class="rank-name">前台大厅</div><div class="rank-meta">覆盖全 · 处置及时</div></div>
+          <div class="rank-score" style="color:var(--success)">91</div>
+        </div>
+        <div class="rank-item">
+          <div class="rank-num rank-3">3</div>
+          <div class="rank-info"><div class="rank-name">办公区域</div><div class="rank-meta">事件中等 · 处置一般</div></div>
+          <div class="rank-score" style="color:var(--accent2)">84</div>
+        </div>
+        <div class="rank-item">
+          <div class="rank-num rank-other">4</div>
+          <div class="rank-info"><div class="rank-name">电梯厅</div><div class="rank-meta">覆盖率偏低</div></div>
+          <div class="rank-score" style="color:var(--warning)">76</div>
+        </div>
+        <div class="rank-item">
+          <div class="rank-num rank-other" style="background:rgba(255,71,87,0.15);color:var(--danger)">5</div>
+          <div class="rank-info"><div class="rank-name">消防通道 ⚠️</div><div class="rank-meta">复发7次 · 整改不彻底</div></div>
+          <div class="rank-score" style="color:var(--danger)">54</div>
+        </div>
+      </div>
+
+      <!-- 指标达标 -->
+      <div class="chart-card">
+        <div class="cc-title">📊 KPI指标达标情况 <span class="cc-sub">本周 vs 目标</span></div>
+        <div class="metric-row">
+          <div class="metric-icon">✅</div>
+          <div class="metric-name">路线覆盖率</div>
+          <div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:98%;background:var(--success)"></div></div>
+          <div class="metric-target">目标≥95%</div>
+          <div class="metric-actual" style="color:var(--success)">98%</div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-icon">✅</div>
+          <div class="metric-name">SLA完结率</div>
+          <div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:94%;background:var(--success)"></div></div>
+          <div class="metric-target">目标≥90%</div>
+          <div class="metric-actual" style="color:var(--success)">94%</div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-icon">✅</div>
+          <div class="metric-name">误报率</div>
+          <div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:3%;background:var(--danger)"></div></div>
+          <div class="metric-target">目标≤5%</div>
+          <div class="metric-actual" style="color:var(--success)">3%</div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-icon">✅</div>
+          <div class="metric-name">平均响应时效</div>
+          <div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:72%;background:var(--warning)"></div></div>
+          <div class="metric-target">目标≤15分</div>
+          <div class="metric-actual" style="color:var(--success)">8.4分</div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-icon">⚠️</div>
+          <div class="metric-name">复发率</div>
+          <div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:12%;background:var(--danger)"></div></div>
+          <div class="metric-target">目标≤8%</div>
+          <div class="metric-actual" style="color:var(--danger)">12%</div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-icon">⚠️</div>
+          <div class="metric-name">盲区摄像头数</div>
+          <div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:8%;background:var(--warning)"></div></div>
+          <div class="metric-target">目标≤1路</div>
+          <div class="metric-actual" style="color:var(--warning)">2路</div>
+        </div>
+      </div>
+
+      <!-- 异常预警 -->
+      <div class="chart-card">
+        <div class="cc-title">🔔 管理层关注事项 <span class="cc-sub">需要决策</span></div>
+        <div class="alert-row" style="border-left:3px solid var(--danger);">
+          <div class="alert-icon">🔥</div>
+          <div class="alert-content">
+            <div>消防通道B区 <strong style="color:var(--danger)">复发7次</strong>，治理失效</div>
+            <div class="alert-meta">建议：启动专项整治方案 + 约谈保洁班组</div>
+          </div>
+          <div class="alert-action">处理 →</div>
+        </div>
+        <div class="alert-row" style="border-left:3px solid var(--warning);">
+          <div class="alert-icon">📷</div>
+          <div class="alert-content">
+            <div>Cam-005 离线超 <strong style="color:var(--warning)">48小时</strong>，形成盲区</div>
+            <div class="alert-meta">工单已派出，工程队今日修复</div>
+          </div>
+          <div class="alert-action">跟进 →</div>
+        </div>
+        <div class="alert-row" style="border-left:3px solid var(--warning);">
+          <div class="alert-icon">⏰</div>
+          <div class="alert-content">
+            <div>今日 <strong style="color:var(--warning)">1次</strong> 响应超时（22分钟）</div>
+            <div class="alert-meta">10:12 机房尾随事件，值班员未及时处置</div>
+          </div>
+          <div class="alert-action">查看 →</div>
+        </div>
+        <div class="alert-row" style="border-left:3px solid var(--accent);">
+          <div class="alert-icon">📈</div>
+          <div class="alert-content">
+            <div>今日异常数量 <strong style="color:var(--accent)">高于</strong> 本周均值32%</div>
+            <div class="alert-meta">建议检查今日是否有特殊活动或人员变动</div>
+          </div>
+          <div class="alert-action">分析 →</div>
+        </div>
+
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">本周自动化报告生成率</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+              <div style="width:87%;height:100%;background:var(--success);border-radius:3px;"></div>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--success)">87%</div>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px;">7/8份报告AI自动生成，1份需人工补充</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 异常热力矩阵 -->
+    <div class="chart-card">
+      <div class="cc-title">🌡️ 本周异常热力矩阵 <span class="cc-sub">区域 × 时间段</span></div>
+      <div class="heatmap">
+        <div></div>
+        <div class="hm-header">08时</div><div class="hm-header">09时</div><div class="hm-header">10时</div>
+        <div class="hm-header">11时</div><div class="hm-header">12时</div><div class="hm-header">13时</div>
+        <div class="hm-header">14时</div><div class="hm-header">15时</div><div class="hm-header">16时</div>
+        <div class="hm-header">17时</div><div class="hm-header">18时</div><div class="hm-header">19时</div>
+
+        <div class="hm-label">机房</div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.15)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.2)"></div>
+        <div class="hm-cell" style="background:rgba(255,71,87,0.8)"></div><div class="hm-cell" style="background:rgba(255,71,87,0.4)"></div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.1)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.15)"></div>
+        <div class="hm-cell" style="background:rgba(255,184,0,0.3)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.1)"></div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.2)"></div><div class="hm-cell" style="background:rgba(255,71,87,0.3)"></div>
+        <div class="hm-cell" style="background:rgba(255,184,0,0.2)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.1)"></div>
+
+        <div class="hm-label">消防</div>
+        <div class="hm-cell" style="background:rgba(255,184,0,0.3)"></div><div class="hm-cell" style="background:rgba(255,71,87,0.5)"></div>
+        <div class="hm-cell" style="background:rgba(255,184,0,0.4)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.15)"></div>
+        <div class="hm-cell" style="background:rgba(255,71,87,0.3)"></div><div class="hm-cell" style="background:rgba(255,184,0,0.4)"></div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.1)"></div><div class="hm-cell" style="background:rgba(255,71,87,0.6)"></div>
+        <div class="hm-cell" style="background:rgba(255,184,0,0.3)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.2)"></div>
+        <div class="hm-cell" style="background:rgba(255,71,87,0.4)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.15)"></div>
+
+        <div class="hm-label">前台</div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.1)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.2)"></div>
+        <div class="hm-cell" style="background:rgba(255,184,0,0.5)"></div><div class="hm-cell" style="background:rgba(255,184,0,0.3)"></div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.15)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.1)"></div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.2)"></div><div class="hm-cell" style="background:rgba(255,71,87,0.4)"></div>
+        <div class="hm-cell" style="background:rgba(255,184,0,0.6)"></div><div class="hm-cell" style="background:rgba(255,71,87,0.5)"></div>
+        <div class="hm-cell" style="background:rgba(255,184,0,0.4)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.2)"></div>
+
+        <div class="hm-label">停车</div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.15)"></div><div class="hm-cell" style="background:rgba(255,184,0,0.3)"></div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.1)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.15)"></div>
+        <div class="hm-cell" style="background:rgba(255,71,87,0.3)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.1)"></div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.15)"></div><div class="hm-cell" style="background:rgba(255,184,0,0.25)"></div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.2)"></div><div class="hm-cell" style="background:rgba(255,71,87,0.25)"></div>
+        <div class="hm-cell" style="background:rgba(30,111,255,0.1)"></div><div class="hm-cell" style="background:rgba(30,111,255,0.1)"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:var(--text2);">
+        <span>颜色深度 = 异常频率</span>
+        <div style="display:flex;align-items:center;gap:4px;margin-left:12px;">
+          <div style="width:40px;height:8px;background:linear-gradient(to right, rgba(30,111,255,0.1), rgba(255,184,0,0.5), rgba(255,71,87,0.8));border-radius:2px;"></div>
+          <span>低 → 高</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+  </div>
+
+  <div class="page-nav">
+    <span>原型导航：</span>
+    <a class="page-link" href="index.html">💬 调度舱</a>
+    <a class="page-link" href="incident.html">📋 事件中心</a>
+    <a class="page-link" href="traceback.html">🔍 溯源工作台</a>
+    <a class="page-link" href="assets.html">📂 资产库</a>
+    <a class="page-link" href="report.html">📊 报告中心</a>
+    <a class="page-link current">📈 KPI看板</a>
+    <a class="page-link" href="skills.html">⚙️ 技能库</a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日早报 · 视觉智能巡查Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a1628; --bg2: #0f2240; --bg3: #162b4a;
+  --accent: #1e6fff; --accent2: #00c2ff;
+  --text: #e8f0fe; --text2: #a0b4c8;
+  --border: #1e3a5f;
+  --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
+  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; padding: 24px; }
+
+.container { max-width: 900px; margin: 0 auto; }
+
+/* 头部 */
+.header { text-align: center; margin-bottom: 32px; }
+.logo { font-size: 48px; margin-bottom: 12px; }
+.title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.subtitle { color: var(--text2); font-size: 14px; }
+.date { color: var(--accent); font-weight: 600; margin-top: 8px; }
+
+/* 统计卡片 */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--bg2); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid var(--border); }
+.stat-icon { font-size: 28px; margin-bottom: 8px; }
+.stat-value { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+.stat-label { font-size: 13px; color: var(--text2); }
+.stat-value.danger { color: var(--danger); }
+.stat-value.warning { color: var(--warning); }
+.stat-value.success { color: var(--success); }
+
+/* 早报卡片 */
+.report-section { margin-bottom: 24px; }
+.section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.report-card { background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 12px; }
+.report-card.highlight { border-left: 4px solid var(--danger); }
+.report-card.warning { border-left: 4px solid var(--warning); }
+.report-card.success { border-left: 4px solid var(--success); }
+
+.report-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.report-type { padding: 4px 10px; border-radius: 4px; font-size: 12px; background: var(--bg3); }
+.report-time { font-size: 12px; color: var(--text2); }
+.report-title { font-size: 15px; font-weight: 500; margin-bottom: 8px; }
+.report-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.report-action { margin-top: 12px; }
+.report-action a { color: var(--accent); font-size: 13px; text-decoration: none; }
+.report-action a:hover { text-decoration: underline; }
+
+/* 待办事项 */
+.todo-list { background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+.todo-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.todo-item:last-child { border-bottom: none; }
+.todo-check { width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--border); flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+.todo-check.checked { background: var(--accent); border-color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.todo-content { flex: 1; }
+.todo-title { font-size: 14px; margin-bottom: 4px; }
+.todo-meta { font-size: 12px; color: var(--text2); }
+.todo-priority { padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+.priority-high { background: rgba(255,71,87,0.15); color: var(--danger); }
+.priority-normal { background: rgba(255,184,0,0.15); color: var(--warning); }
+
+/* 底部 */
+.footer { text-align: center; padding: 24px; color: var(--text2); font-size: 12px; }
+.footer a { color: var(--accent); text-decoration: none; }
+
+/* 分享按钮 */
+.share-bar { display: flex; gap: 12px; justify-content: center; margin-bottom: 24px; }
+.btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #2a7fff; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--bg3); }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- 头部 -->
+  <div class="header">
+    <div class="logo">🌅</div>
+    <div class="title">每日早报</div>
+    <div class="subtitle">视觉智能巡查Agent · 智能安防早间简报</div>
+    <div class="date">2026年3月11日 星期三</div>
+  </div>
+  
+  <!-- 分享按钮 -->
+  <div class="share-bar">
+    <button class="btn btn-outline">📤 分享到钉钉</button>
+    <button class="btn btn-outline">💼 分享到企微</button>
+    <button class="btn btn-outline">📧 发送到邮箱</button>
+    <button class="btn btn-primary">🖨️ 打印</button>
+  </div>
+  
+  <!-- 核心指标 -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-value">23</div>
+      <div class="stat-label">待处理事件</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏰</div>
+      <div class="stat-value warning">4</div>
+      <div class="stat-label">超时工单</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🔄</div>
+      <div class="stat-value success">96.8%</div>
+      <div class="stat-label">巡查覆盖率</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⚠️</div>
+      <div class="stat-value danger">156</div>
+      <div class="stat-label">昨日告警总数</div>
+    </div>
+  </div>
+  
+  <!-- 重点异常 -->
+  <div class="report-section">
+    <div class="section-title">🚨 重点异常（需关注）</div>
+    
+    <div class="report-card highlight">
+      <div class="report-header">
+        <span class="report-type">🔥 消防通道占用</span>
+        <span class="report-time">今日 07:15</span>
+      </div>
+      <div class="report-title">A栋2单元楼道杂物堆放</div>
+      <div class="report-desc">
+        今日07:15自动巡查发现，A栋2单元楼道存在杂物堆放，占用消防通道。已自动派单至值班保安，预计处理时间30分钟。
+      </div>
+      <div class="report-action">
+        <a href="#">查看详情 →</a>
+      </div>
+    </div>
+    
+    <div class="report-card warning">
+      <div class="report-header">
+        <span class="report-type">🔄 复发提醒</span>
+        <span class="report-time">今日 07:00</span>
+      </div>
+      <div class="report-title">B区消防通道本周第3次占用</div>
+      <div class="report-desc">
+        B区消防通道本周已发生3次占用事件，建议安排专项治理或增加巡查频次。
+      </div>
+      <div class="report-action">
+        <a href="#">查看历史记录 →</a>
+      </div>
+    </div>
+    
+    <div class="report-card">
+      <div class="report-header">
+        <span class="report-type">🚗 违停治理</span>
+        <span class="report-time">昨日 22:30</span>
+      </div>
+      <div class="report-title">B区消防通道车辆违停</div>
+      <div class="report-desc">
+        昨日22:30发现车辆违停，已派单但处理超时。该车牌30天内已违停3次，建议纳入黑名单管理。
+      </div>
+      <div class="report-action">
+        <a href="#">查看详情 →</a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 巡查状态 -->
+  <div class="report-section">
+    <div class="section-title">🔄 昨日巡查概况</div>
+    
+    <div class="report-card success">
+      <div class="report-title">巡查执行情况</div>
+      <div class="report-desc">
+        • 巡查路线执行率：96.8%<br>
+        • 异常发现：45次<br>
+        • 工单完结率：92%<br>
+        • 平均响应时间：8分钟<br>
+        • 报告生成：已生成日报&周报
+      </div>
+      <div class="report-action">
+        <a href="#">查看完整报告 →</a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 待办事项 -->
+  <div class="report-section">
+    <div class="section-title">📋 今日待办事项</div>
+    
+    <div class="todo-list">
+      <div class="todo-item">
+        <div class="todo-check"></div>
+        <div class="todo-content">
+          <div class="todo-title">处理A栋2单元消防通道占用工单</div>
+          <div class="todo-meta">优先级：高 · 工单号 WO-20260311-001</div>
+        </div>
+        <span class="todo-priority priority-high">紧急</span>
+      </div>
+      
+      <div class="todo-item">
+        <div class="todo-check"></div>
+        <div class="todo-content">
+          <div class="todo-title">复核B区消防通道整改情况</div>
+          <div class="todo-meta">优先级：高 · 24小时内需复核</div>
+        </div>
+        <span class="todo-priority priority-high">紧急</span>
+      </div>
+      
+      <div class="todo-item">
+        <div class="todo-check"></div>
+        <div class="todo-content">
+          <div class="todo-title">审批B区消防通道专项治理方案</div>
+          <div class="todo-meta">优先级：中 · 今日内</div>
+        </div>
+        <span class="todo-priority priority-normal">一般</span>
+      </div>
+      
+      <div class="todo-item">
+        <div class="todo-check"></div>
+        <div class="todo-content">
+          <div class="todo-title">确认今晚夜巡任务排班</div>
+          <div class="todo-meta">优先级：中 · 18:00前</div>
+        </div>
+        <span class="todo-priority priority-normal">一般</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 底部 -->
+  <div class="footer">
+    <p>本早报由视觉智能巡查Agent自动生成</p>
+    <p><a href="#">查看历史早报</a> · <a href="#">早报推送设置</a> · <a href="#">退订早报</a></p>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.todo-check').forEach(check => {
+  check.addEventListener('click', function() {
+    this.classList.toggle('checked');
+    if (this.classList.contains('checked')) {
+      this.innerHTML = '✓';
+    } else {
+      this.innerHTML = '';
+    }
+  });
+});
+</script>
+</body>
+</html>

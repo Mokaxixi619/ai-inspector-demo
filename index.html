@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>AI 视觉巡检员 · 原型对比演示站</title>
+<style>
+  body { background: #050a14; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+  h1 { font-size: 24px; margin-bottom: 40px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 80%; max-width: 900px; }
+  .card { background: #0b1321; border: 1px solid #1e2f47; border-radius: 20px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; text-decoration: none; color: inherit; }
+  .card:hover { border-color: #2d7cff; transform: translateY(-10px); box-shadow: 0 20px 40px rgba(45,124,255,0.2); }
+  .v1 { opacity: 0.6; }
+  .v2 { border-color: #2d7cff; box-shadow: 0 0 20px rgba(45,124,255,0.1); }
+  .tag { font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 100px; margin-bottom: 20px; display: inline-block; }
+  .v1-tag { background: #333; }
+  .v2-tag { background: #2d7cff; }
+  .title { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+  .desc { font-size: 14px; color: #8a9cb5; line-height: 1.6; }
+</style>
+</head>
+<body>
+  <h1>AI 视觉巡检员 · 迭代对比演示</h1>
+  <div class="grid">
+    <a href="prototype/index.html" class="card v1">
+      <div class="tag v1-tag">LEGACY</div>
+      <div class="title">1.0 基础分析站</div>
+      <div class="desc">传统视频监控 · 基础人脸/车辆告警 · 静态列表管理</div>
+    </a>
+    <a href="prototype_v2/index.html" class="card v2">
+      <div class="tag v2-tag">AGENTIC 2.0</div>
+      <div class="title">2.0 智能调度舱</div>
+      <div class="desc">Agentic 任务流 · ST-Link 跨镜追踪 · SOP 语义解析 · 闭环处置</div>
+    </a>
+  </div>
+</body>
+</html>

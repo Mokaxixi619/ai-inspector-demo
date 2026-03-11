@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技能库管理 · 视觉智能巡查 Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a1628; --bg2: #0f2240; --bg3: #162b4a;
+  --accent: #1e6fff; --accent2: #00c2ff;
+  --text: #e8f0fe; --text2: #a0b4c8; --border: #1e3a5f;
+  --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
+  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); }
+.logo-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.nav { flex: 1; padding: 16px 0; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 14px; color: var(--text2); transition: all 0.2s; border-left: 3px solid transparent; text-decoration: none; cursor: pointer; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-badge { margin-left: auto; background: var(--danger); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0; }
+.topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+.topbar-title span { color: var(--accent2); }
+.btn { padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; font-family: var(--font); transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.content { flex: 1; display: flex; overflow: hidden; }
+
+/* 左：分类 */
+.cat-panel { width: 200px; min-width: 200px; background: var(--bg2); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
+.cat-title { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.cat-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text2); margin-bottom: 3px; transition: all 0.2s; }
+.cat-item:hover { background: var(--bg3); color: var(--text); }
+.cat-item.active { background: rgba(30,111,255,0.12); color: var(--accent); }
+.cat-count { margin-left: auto; font-size: 11px; }
+.cat-count.green { color: var(--success); }
+.cat-count.yellow { color: var(--warning); }
+.cat-count.red { color: var(--danger); }
+
+/* 主区域 */
+.skills-area { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* 系统状态 */
+.sys-status { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
+.sys-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.sys-num { font-size: 20px; font-weight: 700; }
+.sys-label { font-size: 11px; color: var(--text2); }
+
+/* 技能分组 */
+.skill-section { margin-bottom: 24px; }
+.skill-section-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.skill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+
+/* 技能卡片 */
+.skill-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: all 0.2s; }
+.skill-card:hover { border-color: rgba(30,111,255,0.4); }
+.skill-card.active { border-color: rgba(0,217,126,0.4); }
+.skill-card.warning { border-color: rgba(255,184,0,0.4); }
+.skill-card.inactive { opacity: 0.6; }
+.sc-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.sc-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.sc-icon.vision { background: rgba(30,111,255,0.15); }
+.sc-icon.exec { background: rgba(0,217,126,0.12); }
+.sc-icon.notify { background: rgba(255,184,0,0.12); }
+.sc-icon.report { background: rgba(160,80,255,0.15); }
+.sc-info { flex: 1; }
+.sc-name { font-size: 14px; font-weight: 600; }
+.sc-type { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.sc-switch { width: 38px; height: 22px; border-radius: 11px; position: relative; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
+.sc-switch.on { background: var(--success); }
+.sc-switch.off { background: var(--border); }
+.sc-switch.warn { background: var(--warning); }
+.sc-switch::after { content: ''; position: absolute; top: 3px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.sc-switch.on::after { right: 3px; }
+.sc-switch.off::after { left: 3px; }
+.sc-switch.warn::after { right: 3px; }
+.sc-body { padding: 10px 14px; }
+.sc-desc { font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 8px; }
+.sc-metrics { display: flex; gap: 12px; }
+.sc-metric { font-size: 11px; color: var(--text2); }
+.sc-metric strong { color: var(--text); }
+.sc-footer { padding: 8px 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.sc-status-tag { font-size: 11px; padding: 2px 7px; border-radius: 8px; }
+.sct-on { background: rgba(0,217,126,0.12); color: var(--success); }
+.sct-off { background: var(--bg3); color: var(--text2); }
+.sct-warn { background: rgba(255,184,0,0.12); color: var(--warning); }
+.sc-btns { margin-left: auto; display: flex; gap: 5px; }
+.sc-btn { padding: 3px 9px; border-radius: 5px; font-size: 11px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: var(--font); transition: all 0.2s; }
+.sc-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sc-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* 降级策略 */
+.fallback-section { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.fb-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.fb-item { display: flex; gap: 10px; padding: 10px 12px; background: var(--bg3); border-radius: 8px; margin-bottom: 6px; }
+.fb-icon { font-size: 16px; flex-shrink: 0; }
+.fb-content { flex: 1; }
+.fb-trigger { font-size: 13px; font-weight: 600; }
+.fb-action { font-size: 12px; color: var(--text2); margin-top: 3px; }
+.fb-ui { font-size: 11px; color: var(--accent); margin-top: 3px; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.page-nav { background: var(--bg2); border-top: 1px solid var(--border); padding: 10px 24px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.page-nav span { font-size: 12px; color: var(--text2); }
+.page-link { padding: 4px 12px; border-radius: 14px; font-size: 12px; color: var(--text2); text-decoration: none; border: 1px solid var(--border); transition: all 0.2s; }
+.page-link:hover, .page-link.current { border-color: var(--accent); color: var(--accent); background: rgba(30,111,255,0.08); }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo"><div class="logo-title">🔭 巡查 Agent</div><div class="logo-sub">视觉智能运营平台</div></div>
+  <nav class="nav">
+    <a href="index.html" class="nav-item"><span class="icon">💬</span> Agent调度舱</a>
+    <a href="incident.html" class="nav-item"><span class="icon">📋</span> 事件闭环中心 <span class="nav-badge">7</span></a>
+    <a href="traceback.html" class="nav-item"><span class="icon">🔍</span> 智能溯源工作台</a>
+    <a href="assets.html" class="nav-item"><span class="icon">📂</span> 巡查资产库</a>
+    <a href="report.html" class="nav-item"><span class="icon">📊</span> 巡查报告</a>
+    <a href="dashboard.html" class="nav-item"><span class="icon">📈</span> KPI管理看板</a>
+    <div class="nav-item active"><span class="icon">⚙️</span> 技能库管理</div>
+  </nav>
+  <div class="sidebar-footer"><span class="status-dot"></span><span style="font-size:12px;color:var(--text2)">Agent运行中 · 23路在线</span></div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">技能库 <span>管理</span></div>
+    <span style="font-size:13px;color:var(--text2)">视觉算法 · 执行工具 · 通知插件 · 降级策略</span>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button class="btn btn-ghost">📋 审计日志</button>
+      <button class="btn btn-primary">+ 安装技能</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 左：分类 -->
+    <div class="cat-panel">
+      <div class="cat-title">技能分类</div>
+      <div class="cat-item active">🔧 全部技能 <span class="cat-count green">12</span></div>
+      <div class="cat-item">👁 视觉算力 <span class="cat-count green">5</span></div>
+      <div class="cat-item">⚡ 执行工具 <span class="cat-count green">4</span></div>
+      <div class="cat-item">📢 通知渠道 <span class="cat-count green">3</span></div>
+      <div style="height:12px;border-top:1px solid var(--border);margin-top:8px;"></div>
+      <div class="cat-title" style="margin-top:8px">运行状态</div>
+      <div class="cat-item">✅ 运行中 <span class="cat-count green">9</span></div>
+      <div class="cat-item">⚠️ 告警 <span class="cat-count yellow">2</span></div>
+      <div class="cat-item">🔴 停用 <span class="cat-count">1</span></div>
+      <div style="height:12px;border-top:1px solid var(--border);margin-top:8px;"></div>
+      <div class="cat-title" style="margin-top:8px">算力类型</div>
+      <div class="cat-item">🖥️ 边缘小模型 <span class="cat-count">6</span></div>
+      <div class="cat-item">☁️ 云端大模型 <span class="cat-count">3</span></div>
+      <div class="cat-item">🔗 外部服务 <span class="cat-count">3</span></div>
+    </div>
+
+    <!-- 主区域 -->
+    <div class="skills-area">
+      <!-- 系统状态 -->
+      <div class="sys-status">
+        <div style="font-size:14px;font-weight:600;">系统整体状态</div>
+        <div style="width:1px;height:30px;background:var(--border);"></div>
+        <div class="sys-item"><div class="sys-num" style="color:var(--success)">9</div><div class="sys-label">技能运行中</div></div>
+        <div class="sys-item"><div class="sys-num" style="color:var(--warning)">2</div><div class="sys-label">有告警</div></div>
+        <div class="sys-item"><div class="sys-num" style="color:var(--text2)">1</div><div class="sys-label">已停用</div></div>
+        <div class="sys-item"><div class="sys-num" style="color:var(--accent2)">68%</div><div class="sys-label">边缘算力</div></div>
+        <div class="sys-item"><div class="sys-num" style="color:var(--accent)">24%</div><div class="sys-label">云端算力</div></div>
+        <div style="margin-left:auto;background:rgba(0,217,126,0.08);border:1px solid rgba(0,217,126,0.2);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--success);">
+          ✅ 系统运行正常 · 预计每日费用 ¥12.6
+        </div>
+      </div>
+
+      <!-- 视觉算力技能 -->
+      <div class="skill-section">
+        <div class="skill-section-title">👁 视觉算力技能 <span style="font-size:12px;color:var(--text2);font-weight:400">负责感知与识别</span></div>
+        <div class="skill-grid">
+
+          <div class="skill-card active">
+            <div class="sc-header">
+              <div class="sc-icon vision">🔍</div>
+              <div class="sc-info"><div class="sc-name">YOLO目标检测</div><div class="sc-type">边缘小模型 · 实时推理</div></div>
+              <div class="sc-switch on"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">覆盖人员检测、车辆识别、客流统计、违规行为等800+场景，运行于边缘盒子，延迟&lt;100ms</div>
+              <div class="sc-metrics">
+                <div class="sc-metric">准确率 <strong>94%</strong></div>
+                <div class="sc-metric">延迟 <strong>80ms</strong></div>
+                <div class="sc-metric">今日调用 <strong>1.2万次</strong></div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-on">✅ 运行中</span>
+              <div class="sc-btns"><button class="sc-btn">监控</button><button class="sc-btn primary">配置</button></div>
+            </div>
+          </div>
+
+          <div class="skill-card active">
+            <div class="sc-header">
+              <div class="sc-icon vision">🔥</div>
+              <div class="sc-info"><div class="sc-name">烟火检测专用模型</div><div class="sc-type">边缘小模型 · 消防场景</div></div>
+              <div class="sc-switch on"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">专为消防安全设计的轻量化烟火检测模型，低功耗持续运行，支持夜间红外模式</div>
+              <div class="sc-metrics">
+                <div class="sc-metric">准确率 <strong>97%</strong></div>
+                <div class="sc-metric">误报率 <strong>1.2%</strong></div>
+                <div class="sc-metric">今日调用 <strong>8.6千次</strong></div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-on">✅ 运行中</span>
+              <div class="sc-btns"><button class="sc-btn">监控</button><button class="sc-btn primary">配置</button></div>
+            </div>
+          </div>
+
+          <div class="skill-card warning">
+            <div class="sc-header">
+              <div class="sc-icon vision">🧠</div>
+              <div class="sc-info"><div class="sc-name">北斗星辰 · 多模态大模型</div><div class="sc-type">云端大模型 · 复杂行为理解</div></div>
+              <div class="sc-switch warn"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">处理复杂长尾场景，支持自然语言描述异常、视频片段语义分析、跨镜行为关联</div>
+              <div class="sc-metrics">
+                <div class="sc-metric">准确率 <strong>91%</strong></div>
+                <div class="sc-metric" style="color:var(--warning)">延迟 <strong style="color:var(--warning)">3.2s ⚠️</strong></div>
+                <div class="sc-metric">今日调用 <strong>234次</strong></div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-warn">⚠️ 响应偏慢</span>
+              <div class="sc-btns"><button class="sc-btn">排查</button><button class="sc-btn primary">配置</button></div>
+            </div>
+          </div>
+
+          <div class="skill-card active">
+            <div class="sc-header">
+              <div class="sc-icon vision">👤</div>
+              <div class="sc-info"><div class="sc-name">REID跨镜追踪</div><div class="sc-type">云端模型 · 跨摄像头目标</div></div>
+              <div class="sc-switch on"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">多摄像头间人员重识别与轨迹关联，支持行人、车辆跨镜追踪，全球学术榜第一</div>
+              <div class="sc-metrics">
+                <div class="sc-metric">追踪精度 <strong>90%</strong></div>
+                <div class="sc-metric">跨镜延迟 <strong>0.8s</strong></div>
+                <div class="sc-metric">今日调用 <strong>89次</strong></div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-on">✅ 运行中</span>
+              <div class="sc-btns"><button class="sc-btn">监控</button><button class="sc-btn primary">配置</button></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 执行工具技能 -->
+      <div class="skill-section">
+        <div class="skill-section-title">⚡ 执行工具技能 <span style="font-size:12px;color:var(--text2);font-weight:400">负责调度与闭环</span></div>
+        <div class="skill-grid">
+
+          <div class="skill-card active">
+            <div class="sc-header">
+              <div class="sc-icon exec">📹</div>
+              <div class="sc-info"><div class="sc-name">rtmp-capture 视频抽帧</div><div class="sc-type">执行工具 · 视频流控制</div></div>
+              <div class="sc-switch on"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">实时从RTSP/RTMP流中抽取关键帧，支持触发式截图、事件录像保存、时间段回放</div>
+              <div class="sc-metrics">
+                <div class="sc-metric">接入流 <strong>23路</strong></div>
+                <div class="sc-metric">今日截图 <strong>4.7千张</strong></div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-on">✅ 运行中</span>
+              <div class="sc-btns"><button class="sc-btn">配置</button></div>
+            </div>
+          </div>
+
+          <div class="skill-card active">
+            <div class="sc-header">
+              <div class="sc-icon exec">📄</div>
+              <div class="sc-info"><div class="sc-name">PDF报告生成引擎</div><div class="sc-type">执行工具 · 报告自动化</div></div>
+              <div class="sc-switch on"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">根据模板自动生成巡查报告PDF，支持中英双语、图文混排、脱敏版本一键生成</div>
+              <div class="sc-metrics">
+                <div class="sc-metric">本周生成 <strong>7份</strong></div>
+                <div class="sc-metric">平均耗时 <strong>8.3s</strong></div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-on">✅ 运行中</span>
+              <div class="sc-btns"><button class="sc-btn">模板库</button><button class="sc-btn primary">配置</button></div>
+            </div>
+          </div>
+
+          <div class="skill-card warning">
+            <div class="sc-header">
+              <div class="sc-icon exec">🚪</div>
+              <div class="sc-info"><div class="sc-name">门禁联动控制</div><div class="sc-type">执行工具 · IoT设备控制</div></div>
+              <div class="sc-switch warn"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">通过Modbus/RS485协议直接控制门禁、闸机、警报灯等设备，支持联动处置指令</div>
+              <div class="sc-metrics">
+                <div class="sc-metric" style="color:var(--warning)">⚠️ Cam-005区域门禁通信超时</div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-warn">⚠️ 部分设备超时</span>
+              <div class="sc-btns"><button class="sc-btn" style="color:var(--warning);border-color:var(--warning)">排查</button><button class="sc-btn primary">配置</button></div>
+            </div>
+          </div>
+
+          <div class="skill-card inactive">
+            <div class="sc-header">
+              <div class="sc-icon exec">🤖</div>
+              <div class="sc-info"><div class="sc-name">无人机巡查联动</div><div class="sc-type">执行工具 · 空中巡检（预留）</div></div>
+              <div class="sc-switch off"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">与DJI/大疆无人机系统集成，支持触发式自动起飞巡查，适合大型园区或高空区域</div>
+              <div class="sc-metrics">
+                <div class="sc-metric" style="color:var(--text2)">未接入设备</div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-off">已停用</span>
+              <div class="sc-btns"><button class="sc-btn">接入设备</button></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 通知渠道 -->
+      <div class="skill-section">
+        <div class="skill-section-title">📢 通知渠道技能 <span style="font-size:12px;color:var(--text2);font-weight:400">负责消息触达</span></div>
+        <div class="skill-grid">
+          <div class="skill-card active">
+            <div class="sc-header">
+              <div class="sc-icon notify">💬</div>
+              <div class="sc-info"><div class="sc-name">钉钉消息推送</div><div class="sc-type">通知渠道 · 企业IM</div></div>
+              <div class="sc-switch on"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">支持单人/群组消息推送、工单派单、确认回执，与钉钉工单系统完整集成</div>
+              <div class="sc-metrics">
+                <div class="sc-metric">今日推送 <strong>23条</strong></div>
+                <div class="sc-metric">回执率 <strong>91%</strong></div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-on">✅ 正常</span>
+              <div class="sc-btns"><button class="sc-btn primary">配置</button></div>
+            </div>
+          </div>
+          <div class="skill-card active">
+            <div class="sc-header">
+              <div class="sc-icon notify">📱</div>
+              <div class="sc-info"><div class="sc-name">短信通知</div><div class="sc-type">通知渠道 · 紧急告警</div></div>
+              <div class="sc-switch on"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">高级事件触发时自动发送短信给值班负责人，确保在无网络时也能收到告警</div>
+              <div class="sc-metrics">
+                <div class="sc-metric">今日发送 <strong>2条</strong></div>
+                <div class="sc-metric">触发条件 <strong>高级事件</strong></div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-on">✅ 正常</span>
+              <div class="sc-btns"><button class="sc-btn primary">配置</button></div>
+            </div>
+          </div>
+          <div class="skill-card active">
+            <div class="sc-header">
+              <div class="sc-icon notify">🔊</div>
+              <div class="sc-info"><div class="sc-name">现场广播联动</div><div class="sc-type">通知渠道 · IoT扬声器</div></div>
+              <div class="sc-switch on"></div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-desc">检测到特定事件时触发现场广播提示，支持预录语音和TTS实时合成，适合公共区域</div>
+              <div class="sc-metrics">
+                <div class="sc-metric">今日触发 <strong>0次</strong></div>
+                <div class="sc-metric">设备数 <strong>4个</strong></div>
+              </div>
+            </div>
+            <div class="sc-footer">
+              <span class="sc-status-tag sct-on">✅ 正常</span>
+              <div class="sc-btns"><button class="sc-btn primary">配置</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 降级策略 -->
+      <div class="fallback-section">
+        <div class="fb-title">🛡️ 技术降级策略（系统稳定性保障）</div>
+        <div class="fb-item">
+          <div class="fb-icon">🔌</div>
+          <div class="fb-content">
+            <div class="fb-trigger">视频流断开（rtmp-capture超时）</div>
+            <div class="fb-action">跳过该点位，继续其他摄像头巡查；在报告中标记"设备离线"并自动派单工程队</div>
+            <div class="fb-ui">UI展示：卡片显示"🔌 设备离线"灰色占位符</div>
+          </div>
+        </div>
+        <div class="fb-item">
+          <div class="fb-icon">☁️</div>
+          <div class="fb-content">
+            <div class="fb-trigger">大模型响应超时（超过15秒）</div>
+            <div class="fb-action">降级为仅用YOLO小模型输出结构化数据（人数/目标类型），标注"快速模式"</div>
+            <div class="fb-ui">UI展示：截帧正常展示，卡片打上"⚡ 快速模式"标签，提示"暂无语义分析"</div>
+          </div>
+        </div>
+        <div class="fb-item">
+          <div class="fb-icon">🔕</div>
+          <div class="fb-content">
+            <div class="fb-trigger">某点位频繁误报（1小时内人工标记3次以上）</div>
+            <div class="fb-action">自动下调该摄像头对应算法的灵敏度阈值，进入"学习抑制"状态，7天后自动恢复评估</div>
+            <div class="fb-ui">UI展示：顶部通告栏提示"检测到Cam-XXX频繁误报，已自动下调灵敏度"</div>
+          </div>
+        </div>
+        <div class="fb-item">
+          <div class="fb-icon">🚨</div>
+          <div class="fb-content">
+            <div class="fb-trigger">通知渠道全部失败（钉钉+短信均不可达）</div>
+            <div class="fb-action">在控制台产生最高优先级告警，保留本地事件记录，等待网络恢复后批量重发</div>
+            <div class="fb-ui">UI展示：全屏顶部红色横幅"⚠️ 通知系统异常，事件仍在记录中"</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:20px"></div>
+    </div>
+  </div>
+
+  <div class="page-nav">
+    <span>原型导航：</span>
+    <a class="page-link" href="index.html">💬 调度舱</a>
+    <a class="page-link" href="incident.html">📋 事件中心</a>
+    <a class="page-link" href="traceback.html">🔍 溯源工作台</a>
+    <a class="page-link" href="assets.html">📂 资产库</a>
+    <a class="page-link" href="report.html">📊 报告中心</a>
+    <a class="page-link" href="dashboard.html">📈 KPI看板</a>
+    <a class="page-link current">⚙️ 技能库</a>
+  </div>
+</div>
+</body>
+</html>

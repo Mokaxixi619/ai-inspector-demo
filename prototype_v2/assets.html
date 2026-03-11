@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI视觉巡检员 2.0 · SOP 巡查资产中心</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #050a14;
+  --bg2: #0b1321;
+  --bg3: #111d2e;
+  --accent: #2d7cff;
+  --accent-glow: rgba(45, 124, 255, 0.4);
+  --accent2: #00f2ff;
+  --text: #e1e7f0;
+  --text2: #8a9cb5;
+  --border: #1e2f47;
+  --success: #00ff88;
+  --warning: #ffcc00;
+  --danger: #ff4d4d;
+  --font: 'Inter', 'PingFang SC', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+
+/* 2.0 侧边导航 */
+.sidebar {
+  width: 240px; min-width: 240px; background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: 0;
+}
+.brand { padding: 24px 20px; background: linear-gradient(to bottom, rgba(45,124,255,0.05), transparent); }
+.brand-title { font-size: 18px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
+.brand-title span { color: var(--accent); }
+.brand-sub { font-size: 11px; color: var(--text2); margin-top: 4px; letter-spacing: 1px; }
+
+.nav-group { margin-top: 12px; }
+.nav-group-title { font-size: 11px; color: var(--text2); padding: 0 20px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; cursor: pointer; font-size: 14px; color: var(--text2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 4px solid transparent; text-decoration: none;
+}
+.nav-item:hover { background: rgba(255,255,255,0.03); color: #fff; }
+.nav-item.active { background: rgba(45,124,255,0.1); color: #fff; border-left-color: var(--accent); box-shadow: inset 4px 0 10px -4px var(--accent); }
+.nav-item .icon { font-size: 18px; }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  height: 64px; background: var(--bg); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 28px; gap: 20px; flex-shrink: 0;
+}
+.topbar-title { font-size: 16px; font-weight: 700; flex: 1; }
+.topbar-title span { color: var(--accent); }
+
+.content { flex: 1; display: flex; overflow: hidden; }
+
+/* 2.0 资产库布局 */
+.assets-grid { flex: 1; overflow-y: auto; padding: 32px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+
+.sop-card-v2 {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 20px;
+  padding: 24px; transition: all 0.3s; cursor: pointer; position: relative; overflow: hidden;
+}
+.sop-card-v2:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.4); }
+.sop-status-pill { position: absolute; top: 20px; right: 20px; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; background: rgba(0,255,136,0.1); color: var(--success); }
+
+.card-icon-v2 { width: 48px; height: 48px; border-radius: 12px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px; }
+.card-title-v2 { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.card-desc-v2 { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 20px; }
+
+.rule-stat-v2 { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px; }
+.progress-bar-v2 { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin-bottom: 20px; }
+.progress-fill-v2 { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+
+/* 2.0 SOP 解析器预览 */
+.parser-hero { margin: 32px; background: linear-gradient(135deg, rgba(45,124,255,0.1) 0%, transparent 100%); border: 1px solid var(--accent); border-radius: 24px; padding: 32px; display: flex; gap: 32px; }
+.parser-upload { width: 300px; height: 200px; border: 2px dashed var(--border); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); }
+.parser-details { flex: 1; }
+.parser-rule-item { background: var(--bg2); padding: 12px 16px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+
+/* 底部 */
+.footer-bar { height: 40px; background: var(--bg2); border-top: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; font-size: 11px; color: var(--text2); gap: 20px; }
+.footer-link { color: var(--text2); text-decoration: none; }
+.footer-link.active { color: var(--accent2); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="brand">
+    <div class="brand-title">AI <span>巡检员</span></div>
+    <div class="brand-sub">AGENTIC INSPECTOR 2.0</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">管控中心</div>
+    <a href="index.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🛰️</span> 智能调度舱</div></a>
+    <a href="incident.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🚨</span> 响应处置中心</div></a>
+    <a href="traceback.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🧭</span> 智能溯源(倒查)</div></a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">自动执行</div>
+    <div class="nav-item active"><span class="icon">🔄</span> SOP 巡查计划</div>
+    <a href="tasks.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🛡️</span> 常态布防配置</div></a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">智慧大脑</div>
+    <a href="dashboard.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🧠</span> 策略优化建议</div></a>
+    <a href="report.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📄</span> 巡检效能报告</div></a>
+  </div>
+</div>
+
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-title">资产中心 · <span>SOP 智能解析引擎</span></div>
+    <button class="btn-v2" style="background: var(--bg3); border: 1px solid var(--border);">+ 批量导入点位</button>
+    <button class="btn-v2">+ 导入新 SOP PDF</button>
+  </header>
+
+  <div class="parser-hero">
+    <div class="parser-upload">
+      <span style="font-size: 40px; margin-bottom: 12px;">📄</span>
+      <div style="font-weight: 700;">点击上传 SOP 文档</div>
+      <div style="font-size: 11px; color:var(--text2); margin-top: 4px;">支持 PDF / WORD / TXT</div>
+    </div>
+    <div class="parser-details">
+      <div style="font-size: 11px; color:var(--accent2); font-weight: 800; text-transform: uppercase; margin-bottom: 12px;">最近解析：园区视觉布防规范 v2.1</div>
+      <div class="parser-rule-item">
+        <span style="font-size: 18px;">🛡️</span>
+        <div style="flex:1">
+          <div style="font-size: 13px; font-weight: 700;">规则 01: 正门违停判定</div>
+          <div style="font-size: 11px; color:var(--text2);">停留超过 5 分钟自动触发 [落客区告警] 逻辑</div>
+        </div>
+        <span style="color:var(--success); font-size: 11px; font-weight: 800;">ACTIVE</span>
+      </div>
+      <div class="parser-rule-item">
+        <span style="font-size: 18px;">🔥</span>
+        <div style="flex:1">
+          <div style="font-size: 13px; font-weight: 700;">规则 02: 消防通道占道</div>
+          <div style="font-size: 11px; color:var(--text2);">堆积物面积 > 20% 自动关联 [消防中心] 工单</div>
+        </div>
+        <span style="color:var(--success); font-size: 11px; font-weight: 800;">ACTIVE</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="assets-grid">
+    <div class="sop-card-v2">
+      <div class="sop-status-pill">RUNNING</div>
+      <div class="card-icon-v2">🏢</div>
+      <div class="card-title-v2">办公楼综治 SOP</div>
+      <div class="card-desc-v2">覆盖 A/B/C 三座办公楼的视觉安防标准，共包含 112 条视觉判定逻辑。</div>
+      <div class="rule-stat-v2">
+        <span>解析进度 (完成)</span>
+        <span>100%</span>
+      </div>
+      <div class="progress-bar-v2"><div class="progress-fill-v2" style="width: 100%"></div></div>
+    </div>
+
+    <div class="sop-card-v2">
+      <div class="sop-status-pill" style="color:var(--warning); background:rgba(255,204,0,0.1)">DRAFT</div>
+      <div class="card-icon-v2">🚗</div>
+      <div class="card-title-v2">停车场专项整治 v1.2</div>
+      <div class="card-desc-v2">针对地库 B2/B3 层的照明、漏水、违停行为的专项视频巡查规程。</div>
+      <div class="rule-stat-v2">
+        <span>解析进度 (正在处理...)</span>
+        <span>45%</span>
+      </div>
+      <div class="progress-bar-v2"><div class="progress-fill-v2" style="width: 45%; background: var(--warning)"></div></div>
+    </div>
+  </div>
+
+  <footer class="footer-bar">
+    <span style="font-weight: 800; color: #fff;">2.0 PROTOTYPE</span>
+    <a href="index.html" class="footer-link">调度舱 (2.0)</a>
+    <a href="incident.html" class="footer-link">事件中心</a>
+    <a href="traceback.html" class="footer-link">溯源工作台</a>
+    <a href="assets.html" class="footer-link active">巡查资产库</a>
+    <a href="tasks.html" class="footer-link">布防配置</a>
+    <div style="flex:1"></div>
+    <span>节点: SH-HQ-01</span>
+  </footer
+</div>
+
+</body>
+</html>

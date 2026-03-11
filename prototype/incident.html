@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视觉智能巡查 Agent · 事件闭环中心</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a1628; --bg2: #0f2240; --bg3: #162b4a;
+  --accent: #1e6fff; --accent2: #00c2ff;
+  --text: #e8f0fe; --text2: #a0b4c8; --border: #1e3a5f;
+  --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
+  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+
+.sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); letter-spacing: 1px; }
+.logo-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.nav { flex: 1; padding: 16px 0; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; font-size: 14px; color: var(--text2); transition: all 0.2s; border-left: 3px solid transparent; text-decoration: none; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-badge { margin-left: auto; background: var(--danger); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0; }
+.topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+.topbar-title span { color: var(--accent2); }
+
+.btn { padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; font-family: var(--font); transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+.content { flex: 1; display: flex; overflow: hidden; }
+
+/* 左：筛选栏 */
+.filter-panel { width: 240px; min-width: 240px; background: var(--bg2); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
+.filter-section { margin-bottom: 20px; }
+.filter-title { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filter-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text2); transition: all 0.2s; }
+.filter-item:hover { background: var(--bg3); color: var(--text); }
+.filter-item.active { background: rgba(30,111,255,0.12); color: var(--accent); }
+.filter-count { margin-left: auto; font-size: 11px; font-weight: 700; }
+.filter-count.red { color: var(--danger); }
+.filter-count.yellow { color: var(--warning); }
+.filter-count.blue { color: var(--accent); }
+.filter-count.gray { color: var(--text2); }
+
+.search-box { display: flex; align-items: center; gap: 8px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 16px; }
+.search-box input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 13px; font-family: var(--font); }
+.search-box input::placeholder { color: var(--text2); }
+
+/* 中：事件列表 */
+.incident-list { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.incident-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s; }
+.incident-card:hover { border-color: var(--accent); box-shadow: 0 4px 20px rgba(30,111,255,0.15); }
+.incident-card.selected { border-color: var(--accent); box-shadow: 0 4px 20px rgba(30,111,255,0.2); }
+.incident-card.danger { border-left: 4px solid var(--danger); }
+.incident-card.warning { border-left: 4px solid var(--warning); }
+.incident-card.info { border-left: 4px solid var(--accent); }
+
+.ic-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.ic-level { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+.level-high { background: var(--danger); color: #fff; }
+.level-mid { background: var(--warning); color: #000; }
+.level-low { background: var(--accent); color: #fff; }
+.level-done { background: var(--success); color: #000; }
+.ic-title { font-size: 14px; font-weight: 600; flex: 1; }
+.ic-time { font-size: 12px; color: var(--text2); }
+.ic-status { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+.status-pending { background: rgba(255,71,87,0.15); color: var(--danger); }
+.status-processing { background: rgba(30,111,255,0.15); color: var(--accent); }
+.status-done { background: rgba(0,217,126,0.15); color: var(--success); }
+
+.ic-body { display: flex; gap: 12px; padding: 12px 14px; }
+.ic-thumb { width: 100px; height: 72px; background: var(--bg3); border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; font-size: 24px; color: var(--text2); }
+.ic-info { flex: 1; }
+.ic-desc { font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 8px; }
+.ic-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ic-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--bg3); color: var(--text2); }
+.ic-actions { display: flex; gap: 6px; padding: 0 14px 12px; }
+.ic-btn { padding: 5px 12px; border-radius: 5px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: var(--font); transition: all 0.2s; }
+.ic-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ic-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ic-btn.primary:hover { background: #3d7fff; }
+
+/* 右：详情面板 */
+.detail-panel { width: 360px; min-width: 360px; background: var(--bg2); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.dp-header { padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.dp-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.dp-meta { font-size: 12px; color: var(--text2); }
+.dp-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.dp-section-title { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+
+.dp-screenshot { width: 100%; height: 160px; background: var(--bg3); border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.dp-bbox { position: absolute; border: 2px solid var(--danger); background: rgba(255,71,87,0.08); }
+.dp-bbox-label { position: absolute; top: -18px; left: 0; background: var(--danger); color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 3px; }
+
+.dp-info-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.dp-info-row:last-child { border-bottom: none; }
+.dp-info-label { color: var(--text2); }
+.dp-info-value { color: var(--text); font-weight: 500; }
+
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 1px; background: var(--border); }
+.tl-item { position: relative; margin-bottom: 14px; }
+.tl-dot { position: absolute; left: -20px; top: 3px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 8px; }
+.tl-dot.done { border-color: var(--success); background: var(--success); color: #000; }
+.tl-dot.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+.tl-dot.pending { border-color: var(--border); }
+.tl-content { }
+.tl-title { font-size: 13px; font-weight: 600; }
+.tl-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.tl-time { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+.dp-footer { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+.dp-btn { flex: 1; padding: 9px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-family: var(--font); font-weight: 600; transition: all 0.2s; text-align: center; }
+.dp-btn.primary { background: var(--accent); color: #fff; }
+.dp-btn.primary:hover { background: #3d7fff; }
+.dp-btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+.dp-btn.ghost:hover { border-color: var(--text2); color: var(--text); }
+.dp-btn.danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+
+/* 误报标注样式 */
+.misreport-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 10px; font-size: 12px; background: rgba(255,184,0,0.1); color: var(--warning); border: 1px solid rgba(255,184,0,0.3); }
+
+/* 统计行 */
+.stat-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.stat-chip { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+.stat-chip .num { font-size: 20px; font-weight: 700; }
+.stat-chip .lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.page-nav { background: var(--bg2); border-top: 1px solid var(--border); padding: 10px 24px; display: flex; gap: 8px; align-items: center; }
+.page-nav span { font-size: 12px; color: var(--text2); }
+.page-link { padding: 4px 12px; border-radius: 14px; font-size: 12px; color: var(--text2); text-decoration: none; border: 1px solid var(--border); transition: all 0.2s; }
+.page-link:hover, .page-link.current { border-color: var(--accent); color: var(--accent); background: rgba(30,111,255,0.08); }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-title">🔭 巡查 Agent</div>
+    <div class="logo-sub">视觉智能运营平台</div>
+  </div>
+  <nav class="nav">
+    <a href="index.html" class="nav-item"><span class="icon">💬</span> Agent调度舱</a>
+    <div class="nav-item active"><span class="icon">📋</span> 事件闭环中心 <span class="nav-badge">7</span></div>
+    <a href="traceback.html" class="nav-item"><span class="icon">🔍</span> 智能溯源工作台</a>
+    <a href="assets.html" class="nav-item"><span class="icon">📂</span> 巡查资产库</a>
+    <a href="skills.html" class="nav-item"><span class="icon">⚙️</span> 技能库管理</a>
+  </nav>
+  <div class="sidebar-footer">
+    <span class="status-dot"></span>
+    <span style="font-size:12px;color:var(--text2)">Agent运行中 · 23路在线</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">事件 <span>闭环中心</span></div>
+    <div style="font-size:13px;color:var(--text2)">今日事件：<strong style="color:var(--text)">23</strong> 条 · 待处理：<strong style="color:var(--danger)">7</strong> 条</div>
+    <button class="btn btn-ghost">📤 导出报告</button>
+    <button class="btn btn-primary">🔄 刷新</button>
+  </div>
+
+  <div style="padding:12px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;">
+    <div class="stat-row">
+      <div class="stat-chip"><div class="num" style="color:var(--danger)">7</div><div class="lbl">待处理</div></div>
+      <div class="stat-chip"><div class="num" style="color:var(--accent)">4</div><div class="lbl">处理中</div></div>
+      <div class="stat-chip"><div class="num" style="color:var(--success)">12</div><div class="lbl">已闭环</div></div>
+      <div class="stat-chip"><div class="num" style="color:var(--text2)">3</div><div class="lbl">误报标注</div></div>
+      <div class="stat-chip"><div class="num" style="color:var(--warning)">2</div><div class="lbl">超时预警</div></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 左：筛选 -->
+    <div class="filter-panel">
+      <div class="search-box">
+        <span style="color:var(--text2)">🔍</span>
+        <input placeholder="搜索事件..." />
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-title">处理状态</div>
+        <div class="filter-group">
+          <div class="filter-item active">
+            <span>📋</span> 全部事件
+            <span class="filter-count blue">23</span>
+          </div>
+          <div class="filter-item">
+            <span>🔴</span> 待处理
+            <span class="filter-count red">7</span>
+          </div>
+          <div class="filter-item">
+            <span>🔵</span> 处理中
+            <span class="filter-count blue">4</span>
+          </div>
+          <div class="filter-item">
+            <span>✅</span> 已闭环
+            <span class="filter-count gray">12</span>
+          </div>
+          <div class="filter-item">
+            <span>⚠️</span> 误报标注
+            <span class="filter-count yellow">3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-title">事件级别</div>
+        <div class="filter-group">
+          <div class="filter-item">
+            <span style="color:var(--danger)">●</span> 高级事件
+            <span class="filter-count red">3</span>
+          </div>
+          <div class="filter-item">
+            <span style="color:var(--warning)">●</span> 中级事件
+            <span class="filter-count yellow">11</span>
+          </div>
+          <div class="filter-item">
+            <span style="color:var(--accent)">●</span> 低级事件
+            <span class="filter-count blue">9</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-title">事件类型</div>
+        <div class="filter-group">
+          <div class="filter-item"><span>🔥</span> 消防安全 <span class="filter-count red">4</span></div>
+          <div class="filter-item"><span>👤</span> 人员异常 <span class="filter-count yellow">8</span></div>
+          <div class="filter-item"><span>🚗</span> 车辆秩序 <span class="filter-count blue">5</span></div>
+          <div class="filter-item"><span>🔒</span> 门禁安全 <span class="filter-count yellow">3</span></div>
+          <div class="filter-item"><span>🧹</span> 卫生秩序 <span class="filter-count gray">3</span></div>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-title">时间范围</div>
+        <div class="filter-group">
+          <div class="filter-item active"><span>📅</span> 今天</div>
+          <div class="filter-item"><span>📅</span> 近3天</div>
+          <div class="filter-item"><span>📅</span> 本周</div>
+          <div class="filter-item"><span>📅</span> 自定义</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中：事件列表 -->
+    <div class="incident-list">
+
+      <!-- 事件1：高级，待处理 -->
+      <div class="incident-card danger selected" onclick="selectCard(this)">
+        <div class="ic-header">
+          <span class="ic-level level-high">高级</span>
+          <span class="ic-title">机房门口尾随进入</span>
+          <span class="ic-status status-pending">待处理</span>
+          <span class="ic-time">10:12:33</span>
+        </div>
+        <div class="ic-body">
+          <div class="ic-thumb" style="background:linear-gradient(135deg,#1a0a28,#2a1a40)">
+            <div style="position:absolute;width:45%;height:60%;left:10%;top:15%;border:2px solid var(--danger);"></div>
+            <div style="position:absolute;width:35%;height:55%;left:50%;top:20%;border:2px solid var(--warning);"></div>
+            <div style="position:absolute;bottom:4px;right:4px;font-size:9px;color:rgba(255,255,255,0.4)">Cam-004</div>
+          </div>
+          <div class="ic-info">
+            <div class="ic-desc">检测到<strong>1名未授权人员</strong>尾随已认证人员进入机房区域，停留时间 <strong>4分12秒</strong>，属高危区域入侵事件。</div>
+            <div class="ic-tags">
+              <span class="ic-tag">🔒 门禁安全</span>
+              <span class="ic-tag">Cam-004 机房门口</span>
+              <span class="ic-tag">AI置信度 93%</span>
+            </div>
+          </div>
+        </div>
+        <div class="ic-actions">
+          <button class="ic-btn primary">📋 立即派单</button>
+          <button class="ic-btn">📹 查看录像</button>
+          <button class="ic-btn">🔔 通知负责人</button>
+          <button class="ic-btn" style="margin-left:auto;color:var(--text2)">✗ 误报</button>
+        </div>
+      </div>
+
+      <!-- 事件2：高级，处理中 -->
+      <div class="incident-card danger" onclick="selectCard(this)">
+        <div class="ic-header">
+          <span class="ic-level level-high">高级</span>
+          <span class="ic-title">B栋4楼疑似烟火</span>
+          <span class="ic-status status-processing">处理中</span>
+          <span class="ic-time">10:24:02</span>
+        </div>
+        <div class="ic-body">
+          <div class="ic-thumb" style="background:linear-gradient(135deg,#1a0a0a,#3a1010)">
+            <div style="position:absolute;font-size:28px;opacity:0.5">🔥</div>
+            <div style="position:absolute;bottom:4px;right:4px;font-size:9px;color:rgba(255,255,255,0.4)">Cam-012</div>
+          </div>
+          <div class="ic-info">
+            <div class="ic-desc">楼梯间检测到<strong>疑似烟雾</strong>，置信度91%。已自动录像保存，<strong>保安队长李明</strong>已接单处理中。</div>
+            <div class="ic-tags">
+              <span class="ic-tag">🔥 消防安全</span>
+              <span class="ic-tag">Cam-012 B4楼梯间</span>
+              <span class="ic-tag">派单 3分前</span>
+            </div>
+          </div>
+        </div>
+        <div class="ic-actions">
+          <button class="ic-btn">📞 联系处置人</button>
+          <button class="ic-btn">📹 查看直播</button>
+          <button class="ic-btn primary">✅ 确认闭环</button>
+        </div>
+      </div>
+
+      <!-- 事件3：中级，待处理 -->
+      <div class="incident-card warning" onclick="selectCard(this)">
+        <div class="ic-header">
+          <span class="ic-level level-mid">中级</span>
+          <span class="ic-title">前台大厅人员聚集</span>
+          <span class="ic-status status-pending">待处理</span>
+          <span class="ic-time">10:23:47</span>
+        </div>
+        <div class="ic-body">
+          <div class="ic-thumb" style="background:linear-gradient(135deg,#0f2240,#1a3a5c)">
+            <div style="position:absolute;width:25%;height:55%;left:20%;top:15%;border:2px solid var(--danger);"></div>
+            <div style="position:absolute;width:22%;height:50%;left:50%;top:20%;border:2px solid var(--warning);"></div>
+            <div style="position:absolute;width:20%;height:45%;left:72%;top:25%;border:2px solid var(--warning);"></div>
+            <div style="position:absolute;bottom:4px;right:4px;font-size:9px;color:rgba(255,255,255,0.4)">Cam-001</div>
+          </div>
+          <div class="ic-info">
+            <div class="ic-desc">前台区域检测到 <strong>3人聚集</strong>，其中2名疑似未登记访客在前台停留超过8分钟。</div>
+            <div class="ic-tags">
+              <span class="ic-tag">👤 人员异常</span>
+              <span class="ic-tag">Cam-001 前台大厅</span>
+              <span class="ic-tag">聚合事件 ×2</span>
+            </div>
+          </div>
+        </div>
+        <div class="ic-actions">
+          <button class="ic-btn primary">📋 派单前台确认</button>
+          <button class="ic-btn">📹 查看录像</button>
+          <button class="ic-btn" style="margin-left:auto;color:var(--text2)">✗ 误报</button>
+        </div>
+      </div>
+
+      <!-- 事件4：中级，待处理 -->
+      <div class="incident-card warning" onclick="selectCard(this)">
+        <div class="ic-header">
+          <span class="ic-level level-mid">中级</span>
+          <span class="ic-title">消防通道纸箱堆放</span>
+          <span class="ic-status status-pending">待处理</span>
+          <span class="ic-time">09:52:14</span>
+        </div>
+        <div class="ic-body">
+          <div class="ic-thumb" style="background:linear-gradient(135deg,#0f1e12,#1a3a20)">
+            <div style="position:absolute;width:60%;height:50%;left:20%;top:25%;border:2px solid var(--warning);background:rgba(255,184,0,0.1)"></div>
+            <div style="position:absolute;bottom:4px;right:4px;font-size:9px;color:rgba(255,255,255,0.4)">Cam-008</div>
+          </div>
+          <div class="ic-info">
+            <div class="ic-desc">消防通道B检测到<strong>大量纸箱堆放</strong>，占道面积约 60%，存在消防安全隐患，需限期清理。</div>
+            <div class="ic-tags">
+              <span class="ic-tag">🔥 消防安全</span>
+              <span class="ic-tag">Cam-008 消防通道B</span>
+              <span class="ic-tag">持续28分钟</span>
+            </div>
+          </div>
+        </div>
+        <div class="ic-actions">
+          <button class="ic-btn primary">📋 派单清理</button>
+          <button class="ic-btn">📹 查看录像</button>
+          <button class="ic-btn" style="margin-left:auto;color:var(--text2)">✗ 误报</button>
+        </div>
+      </div>
+
+      <!-- 事件5：低级，已闭环 -->
+      <div class="incident-card info" onclick="selectCard(this)" style="opacity:0.7">
+        <div class="ic-header">
+          <span class="ic-level level-done">已闭环</span>
+          <span class="ic-title">停车场车辆越位停放</span>
+          <span class="ic-status status-done">已处理</span>
+          <span class="ic-time">09:31:05</span>
+        </div>
+        <div class="ic-body">
+          <div class="ic-thumb" style="background:linear-gradient(135deg,#0e1a28,#1a2a3a)">
+            <div style="position:absolute;width:50%;height:60%;left:25%;top:15%;border:2px solid var(--accent)"></div>
+            <div style="position:absolute;bottom:4px;right:4px;font-size:9px;color:rgba(255,255,255,0.4)">Cam-002</div>
+          </div>
+          <div class="ic-info">
+            <div class="ic-desc">停车场B区车辆跨线停放，已通知保安张伟处理，<strong>09:45 确认整改完毕</strong>，自动复核通过。</div>
+            <div class="ic-tags">
+              <span class="ic-tag">🚗 车辆秩序</span>
+              <span class="ic-tag">处置耗时 14分钟</span>
+              <span class="ic-tag">✅ AI自动复核</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 事件6：误报标注 -->
+      <div class="incident-card info" onclick="selectCard(this)" style="opacity:0.6">
+        <div class="ic-header">
+          <span class="ic-level" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border)">误报</span>
+          <span class="ic-title">会议室人员滞留（误报）</span>
+          <span class="ic-status" style="background:rgba(160,180,200,0.1);color:var(--text2)">已标注</span>
+          <span class="ic-time">08:47:22</span>
+        </div>
+        <div class="ic-body">
+          <div class="ic-thumb" style="background:linear-gradient(135deg,#1a1a28,#2a2a40);font-size:20px">🚫</div>
+          <div class="ic-info">
+            <div class="ic-desc">节假日会议室人员滞留告警，经人工核实为<strong>加班人员</strong>，已标记为误报，已反馈模型优化。</div>
+            <div class="ic-tags">
+              <span class="ic-tag misreport-badge">⚠️ 误报 · 已反馈模型</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 右：详情面板 -->
+    <div class="detail-panel">
+      <div class="dp-header">
+        <div class="dp-title">机房门口尾随进入</div>
+        <div class="dp-meta">事件ID: INC-20260310-007 · Cam-004 · 10:12:33</div>
+      </div>
+      <!-- 截图+信息横排 -->
+      <div style="display:flex;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <div class="dp-screenshot" style="width:140px;height:100px;flex-shrink:0;border-radius:6px;">
+          <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#1a0a28,#2a1a40)"></div>
+          <div class="dp-bbox" style="left:8%;top:12%;width:42%;height:62%;">
+            <span class="dp-bbox-label">尾随者 93%</span>
+          </div>
+          <div class="dp-bbox" style="left:52%;top:18%;width:38%;height:56%;border-color:var(--warning);">
+            <span class="dp-bbox-label" style="background:var(--warning);color:#000">授权 88%</span>
+          </div>
+          <div style="position:absolute;bottom:4px;right:6px;font-size:9px;color:rgba(255,255,255,0.4)">Cam-004</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span class="ic-level level-high">高级</span>
+            <span style="font-size:11px;color:var(--text2)">门禁安全 · 尾随入侵</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">📍 B栋 机房门口</div>
+          <div style="font-size:12px;color:var(--text2)">🕐 10:12:33 · 持续4分12秒</div>
+          <div style="font-size:12px;color:var(--text2)">⚡ AI置信度 <strong style="color:var(--danger)">93%</strong></div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.4;margin-top:2px;">未识别人员紧随授权人员进入受限区域，行为符合尾随入侵特征</div>
+        </div>
+      </div>
+
+      <!-- 处置时间线（核心，固定展示） -->
+      <div style="padding:14px 16px;flex:1;overflow-y:auto;">
+        <div class="dp-section-title" style="margin-bottom:14px;">📍 处置时间线</div>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content">
+              <div class="tl-title">🤖 AI检测告警</div>
+              <div class="tl-desc">YOLO+LLM双重研判确认，置信度93%，自动录像保存</div>
+              <div class="tl-time">10:12:33</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content">
+              <div class="tl-title">🔗 聚合去重</div>
+              <div class="tl-desc">与2分钟前同区域告警合并为单一事件，减少重复处理</div>
+              <div class="tl-time">10:12:35</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot active" style="animation:pulse 1.2s infinite">●</div>
+            <div class="tl-content">
+              <div class="tl-title" style="color:var(--accent)">⏳ 等待人工处置 · 当前节点</div>
+              <div class="tl-desc" style="color:var(--text)">事件已推送至中心，等待管理员确认派单</div>
+              <div style="margin-top:6px;padding:8px;background:rgba(30,111,255,0.08);border:1px solid rgba(30,111,255,0.2);border-radius:6px;font-size:11px;color:var(--text2)">
+                ⚠️ 超时提醒：高级事件需在 <strong style="color:var(--warning)">15分钟</strong> 内响应，剩余 <strong style="color:var(--danger)">3分钟</strong>
+              </div>
+              <div class="tl-time">10:12:36</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot pending"></div>
+            <div class="tl-content">
+              <div class="tl-title" style="color:var(--text2)">👮 派单处置</div>
+              <div class="tl-desc" style="color:var(--text2)">通知保安人员现场核查，处置结果回传</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot pending"></div>
+            <div class="tl-content">
+              <div class="tl-title" style="color:var(--text2)">✅ 现场确认闭环</div>
+              <div class="tl-desc" style="color:var(--text2)">处置人员拍照回传，管理员确认关单</div>
+            </div>
+          </div>
+          <div class="tl-item" style="margin-bottom:0">
+            <div class="tl-dot pending"></div>
+            <div class="tl-content">
+              <div class="tl-title" style="color:var(--text2)">🔄 AI自动复核</div>
+              <div class="tl-desc" style="color:var(--text2)">闭环后24小时内复查对应点位，确认隐患消除</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 关联视频 -->
+        <div style="margin-top:16px;background:var(--bg3);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px solid var(--border);">
+          <div style="width:40px;height:32px;background:var(--bg2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">▶</div>
+          <div style="flex:1">
+            <div style="font-size:13px">关联录像片段</div>
+            <div style="font-size:11px;color:var(--text2)">10:10:00 — 10:14:30 · 4分30秒</div>
+          </div>
+          <div style="font-size:12px;color:var(--accent)">播放 →</div>
+        </div>
+      </div>
+      <div class="dp-footer">
+        <button class="dp-btn primary">📋 立即派单</button>
+        <button class="dp-btn ghost">📹 直播查看</button>
+        <button class="dp-btn danger">✗ 误报标注</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-nav">
+    <span>原型导航：</span>
+    <a class="page-link" href="index.html">💬 调度舱</a>
+    <a class="page-link current" href="incident.html">📋 事件中心</a>
+    <a class="page-link" href="traceback.html">🔍 溯源工作台</a>
+    <a class="page-link" href="assets.html">📂 资产库</a>
+    <a class="page-link" href="skills.html">⚙️ 技能库</a>
+  </div>
+</div>
+
+<script>
+function selectCard(el) {
+  document.querySelectorAll('.incident-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+</body>
+</html>

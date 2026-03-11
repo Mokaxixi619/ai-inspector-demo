@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>审计日志 · 视觉智能巡查Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a1628; --bg2: #0f2240; --bg3: #162b4a;
+  --accent: #1e6fff; --accent2: #00c2ff;
+  --text: #e8f0fe; --text2: #a0b4c8;
+  --border: #1e3a5f;
+  --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
+  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+
+.sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); letter-spacing: 1px; }
+.logo-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; font-size: 14px; color: var(--text2); transition: all 0.2s; border-left: 3px solid transparent; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+.status-text { font-size: 12px; color: var(--text2); }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.header { height: 60px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+.header-title { font-size: 16px; font-weight: 600; }
+.btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--bg3); }
+.content { flex: 1; padding: 24px; overflow-y: auto; }
+
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--bg2); border-radius: 12px; padding: 16px 20px; border: 1px solid var(--border); }
+.stat-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+.stat-value { font-size: 24px; font-weight: 700; }
+
+.filter-bar { background: var(--bg2); border-radius: 12px; padding: 16px 20px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+.filter-group { display: flex; align-items: center; gap: 8px; }
+.filter-label { font-size: 13px; color: var(--text2); }
+.filter-select, .filter-input { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+.filter-input { width: 180px; }
+
+.log-table { background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+.table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.table-title { font-size: 15px; font-weight: 600; }
+.table-pager { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.pager-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; background: var(--bg3); }
+.pager-btn:hover { background: var(--accent); }
+.pager-info { color: var(--text2); }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 12px 16px; font-size: 12px; color: var(--text2); font-weight: 500; border-bottom: 1px solid var(--border); background: var(--bg3); }
+td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:hover { background: rgba(30,111,255,0.05); }
+.log-id { font-family: monospace; color: var(--accent2); }
+.log-time { color: var(--text2); font-size: 12px; }
+.log-user { display: flex; align-items: center; gap: 8px; }
+.user-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 11px; }
+.log-action { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; }
+.action-create { background: rgba(0,217,126,0.15); color: var(--success); }
+.action-update { background: rgba(30,111,255,0.15); color: var(--accent); }
+.action-delete { background: rgba(255,71,87,0.15); color: var(--danger); }
+.action-query { background: rgba(160,180,200,0.15); color: var(--text2); }
+.action-login { background: rgba(255,184,0,0.15); color: var(--warning); }
+.log-detail { color: var(--text2); font-size: 12px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-detail:hover { white-space: normal; word-break: break-all; }
+.log-target { font-family: monospace; font-size: 12px; color: var(--accent); }
+
+.version-section { margin-top: 24px; }
+.version-card { background: var(--bg2); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+.version-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.version-title { font-size: 15px; font-weight: 600; }
+.version-list { max-height: 400px; overflow-y: auto; }
+.version-item { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; }
+.version-item:last-child { border-bottom: none; }
+.version-num { width: 60px; height: 60px; background: var(--bg3); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.version-num .v { font-size: 14px; color: var(--accent); font-weight: 600; }
+.version-num .num { font-size: 20px; font-weight: 700; }
+.version-info { flex: 1; }
+.version-meta { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+.version-desc { font-size: 13px; }
+.version-actions { display: flex; gap: 8px; }
+.diff-view { background: #1a1a2e; border-radius: 8px; padding: 16px; font-family: monospace; font-size: 12px; line-height: 1.8; overflow-x: auto; }
+.diff-add { color: var(--success); }
+.diff-del { color: var(--danger); }
+
+.modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+.modal.show { display: flex; }
+.modal-content { background: var(--bg2); border-radius: 12px; width: 800px; max-height: 80vh; overflow: hidden; border: 1px solid var(--border); }
+.modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-close { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 6px; }
+.modal-close:hover { background: var(--bg3); }
+.modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+.modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-title">👁️ 巡查Agent</div>
+    <div class="logo-sub">智能视觉巡检系统</div>
+  </div>
+  <div class="nav">
+    <a href="index.html" class="nav-item"><span class="icon">💬</span>Agent调度舱</a>
+    <a href="incident.html" class="nav-item"><span class="icon">📋</span>事件闭环中心</a>
+    <a href="traceback.html" class="nav-item"><span class="icon">🔍</span>智能溯源</a>
+    <a href="cardamage.html" class="nav-item"><span class="icon">🚗</span>谁蹭了我的车</a>
+    <a href="assets.html" class="nav-item"><span class="icon">📂</span>巡查资产库</a>
+    <a href="sop-config.html" class="nav-item"><span class="icon">⚙️</span>SOP配置</a>
+    <a href="report.html" class="nav-item"><span class="icon">📊</span>巡查报告</a>
+    <a href="dashboard.html" class="nav-item"><span class="icon">📈</span>KPI看板</a>
+    <a href="skills.html" class="nav-item"><span class="icon">⚙️</span>技能库</a>
+    <a href="mobile.html" class="nav-item"><span class="icon">📱</span>移动端</a>
+    <a href="templates.html" class="nav-item"><span class="icon">📦</span>模板库</a>
+    <a href="workorder.html" class="nav-item"><span class="icon">📝</span>工单中心</a>
+    <a href="channels.html" class="nav-item"><span class="icon">🔗</span>消息通道</a>
+    <div class="nav-item active"><span class="icon">📜</span>审计日志</div>
+    <a href="#" class="nav-item"><span class="icon">🔐</span>权限管理</a>
+    <a href="#" class="nav-item"><span class="icon">📦</span>证据包</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="status-dot"></div>
+    <span class="status-text">系统运行正常</span>
+  </div>
+</nav>
+
+<main class="main">
+  <header class="header">
+    <div class="header-title">📜 审计日志</div>
+    <div style="display:flex;gap:12px;">
+      <button class="btn btn-outline">导出日志</button>
+      <button class="btn btn-outline">清理历史</button>
+    </div>
+  </header>
+  
+  <div class="content">
+    <!-- 统计 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">今日操作</div>
+        <div class="stat-value">1,247</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">本周操作</div>
+        <div class="stat-value">8,932</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">异常操作</div>
+        <div class="stat-value" style="color:var(--danger)">3</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">版本记录</div>
+        <div class="stat-value">156</div>
+      </div>
+    </div>
+    
+    <!-- 筛选 -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">操作类型</span>
+        <select class="filter-select">
+          <option>全部</option>
+          <option>创建</option>
+          <option>更新</option>
+          <option>删除</option>
+          <option>查询</option>
+          <option>登录</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">操作对象</span>
+        <select class="filter-select">
+          <option>全部</option>
+          <option>布防方案</option>
+          <option>事件</option>
+          <option>工单</option>
+          <option>报告</option>
+          <option>用户</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">操作人</span>
+        <input type="text" class="filter-input" placeholder="搜索用户...">
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">时间范围</span>
+        <input type="date" class="filter-input" value="2026-03-11">
+        <span style="color:var(--text2)">至</span>
+        <input type="date" class="filter-input" value="2026-03-11">
+      </div>
+    </div>
+    
+    <!-- 日志表格 -->
+    <div class="log-table">
+      <div class="table-header">
+        <div class="table-title">操作日志 (共 1,247 条)</div>
+        <div class="table-pager">
+          <div class="pager-btn">‹</div>
+          <span class="pager-info">1 / 125 页</span>
+          <div class="pager-btn">›</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>日志ID</th>
+            <th>时间</th>
+            <th>操作人</th>
+            <th>操作类型</th>
+            <th>操作对象</th>
+            <th>详情</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="log-id">LOG-001247</td>
+            <td class="log-time">07:42:15</td>
+            <td class="log-user">
+              <div class="user-avatar">管</div>
+              <span>管理员</span>
+            </td>
+            <td><span class="log-action action-update">更新</span></td>
+            <td>布防方案</td>
+            <td class="log-detail" title="修改夜间周界巡查频率：30分钟→15分钟">修改夜间周界巡查频率：30分钟→15分钟</td>
+            <td><a href="#" onclick="showDetail('LOG-001247')" style="color:var(--accent)">详情</a></td>
+          </tr>
+          <tr>
+            <td class="log-id">LOG-001246</td>
+            <td class="log-time">07:38:22</td>
+            <td class="log-user">
+              <div class="user-avatar">系</div>
+              <span>系统</span>
+            </td>
+            <td><span class="log-action action-create">创建</span></td>
+            <td>事件</td>
+            <td class="log-detail" title="自动创建事件：消防通道占用 (A栋2单元)">自动创建事件：消防通道占用 (A栋2单元)</td>
+            <td><a href="#" style="color:var(--text2)">详情</a></td>
+          </tr>
+          <tr>
+            <td class="log-id">LOG-001245</td>
+            <td class="log-time">07:35:00</td>
+            <td class="log-user">
+              <div class="user-avatar">保</div>
+              <span>保安队长</span>
+            </td>
+            <td><span class="log-action action-query">查询</span></td>
+            <td>事件</td>
+            <td class="log-detail" title="查询今日事件列表">查询今日事件列表</td>
+            <td><a href="#" style="color:var(--text2)">详情</a></td>
+          </tr>
+          <tr>
+            <td class="log-id">LOG-001244</td>
+            <td class="log-time">07:28:45</td>
+            <td class="log-user">
+              <div class="user-avatar">管</div>
+              <span>管理员</span>
+            </td>
+            <td><span class="log-action action-update">更新</span></td>
+            <td>工单</td>
+            <td class="log-detail" title="更新工单 WO-20260311-003 状态：处理中→已超时">更新工单 WO-20260311-003 状态：处理中→已超时</td>
+            <td><a href="#" style="color:var(--accent)">详情</a></td>
+          </tr>
+          <tr>
+            <td class="log-id">LOG-001243</td>
+            <td class="log-time">07:15:30</td>
+            <td class="log-user">
+              <div class="user-avatar">系</div>
+              <span>系统</span>
+            </td>
+            <td><span class="log-action action-create">创建</span></td>
+            <td>工单</td>
+            <td class="log-detail" title="自动派单 WO-20260311-001 → 值班保安A组">自动派单 WO-20260311-001 → 值班保安A组</td>
+            <td><a href="#" style="color:var(--accent)">详情</a></td>
+          </tr>
+          <tr>
+            <td class="log-id">LOG-001242</td>
+            <td class="log-time">06:00:00</td>
+            <td class="log-user">
+              <div class="user-avatar">系</div>
+              <span>系统</span>
+            </td>
+            <td><span class="log-action action-create">创建</span></td>
+            <td>报告</td>
+            <td class="log-detail" title="自动生成巡查日报 (2026-03-10)">自动生成巡查日报 (2026-03-10)</td>
+            <td><a href="#" style="color:var(--accent)">下载</a></td>
+          </tr>
+          <tr>
+            <td class="log-id">LOG-001241</td>
+            <td class="log-time">昨天 22:30</td>
+            <td class="log-user">
+              <div class="user-avatar">管</div>
+              <span>管理员</span>
+            </td>
+            <td><span class="log-action action-login">登录</span></td>
+            <td>用户</td>
+            <td class="log-detail" title="用户登录成功 (IP: 192.168.1.100)">用户登录成功 (IP: 192.168.1.100)</td>
+            <td><a href="#" style="color:var(--text2)">详情</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- 版本管理 -->
+    <div class="version-section">
+      <div class="version-card">
+        <div class="version-header">
+          <div class="version-title">📊 版本管理 - 布防方案</div>
+          <button class="btn btn-outline">查看全部版本</button>
+        </div>
+        <div class="version-list">
+          <div class="version-item">
+            <div class="version-num">
+              <span class="v">v</span><span class="num">3</span>
+            </div>
+            <div class="version-info">
+              <div class="version-meta">2026-03-11 07:42 · 管理员修改</div>
+              <div class="version-desc">修改夜间周界巡查频率：30分钟→15分钟</div>
+            </div>
+            <div class="version-actions">
+              <button class="btn btn-outline" onclick="showDiff()">对比</button>
+              <button class="btn btn-outline">回滚</button>
+            </div>
+          </div>
+          <div class="version-item">
+            <div class="version-num">
+              <span class="v">v</span><span class="num">2</span>
+            </div>
+            <div class="version-info">
+              <div class="version-meta">2026-03-10 09:15 · 管理员修改</div>
+              <div class="version-desc">新增"高空抛物"巡查场景</div>
+            </div>
+            <div class="version-actions">
+              <button class="btn btn-outline">对比</button>
+              <button class="btn btn-outline">回滚</button>
+            </div>
+          </div>
+          <div class="version-item">
+            <div class="version-num">
+              <span class="v">v</span><span class="num">1</span>
+            </div>
+            <div class="version-info">
+              <div class="version-meta">2026-03-05 14:30 · 管理员创建</div>
+              <div class="version-desc">初始版本：园区基础布防方案</div>
+            </div>
+            <div class="version-actions">
+              <button class="btn btn-outline">对比</button>
+              <button class="btn btn-outline">回滚</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 详情弹窗 -->
+<div class="modal" id="detailModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">日志详情</div>
+      <div class="modal-close" onclick="closeModal()">✕</div>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px;">日志ID</div><div style="font-family:monospace;">LOG-001247</div></div>
+        <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px;">操作时间</div><div>2026-03-11 07:42:15</div></div>
+        <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px;">操作人</div><div>管理员</div></div>
+        <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px;">操作IP</div><div>192.168.1.100</div></div>
+        <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px;">操作类型</div><div><span class="log-action action-update">更新</span></div></div>
+        <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px;">操作对象</div><div>布防方案</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">变更详情</div>
+      <div class="diff-view">
+<span style="color:var(--text2)">- "patrol_frequency": "30min"</span><br>
+<span class="diff-add">+ "patrol_frequency": "15min"</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">关闭</button>
+      <button class="btn btn-primary">导出记录</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showDetail(id) {
+  document.getElementById('detailModal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('detailModal').classList.remove('show');
+}
+function showDiff() {
+  alert('显示 v2 与 v3 的差异对比');
+}
+</script>
+</body>
+</html>

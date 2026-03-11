@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI视觉巡检员 2.0 · 常态布防配置</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #050a14;
+  --bg2: #0b1321;
+  --bg3: #111d2e;
+  --accent: #2d7cff;
+  --accent-glow: rgba(45, 124, 255, 0.4);
+  --accent2: #00f2ff;
+  --text: #e1e7f0;
+  --text2: #8a9cb5;
+  --border: #1e2f47;
+  --success: #00ff88;
+  --warning: #ffcc00;
+  --danger: #ff4d4d;
+  --font: 'Inter', 'PingFang SC', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+
+/* 2.0 侧边导航 */
+.sidebar {
+  width: 240px; min-width: 240px; background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: 0;
+}
+.brand { padding: 24px 20px; background: linear-gradient(to bottom, rgba(45,124,255,0.05), transparent); }
+.brand-title { font-size: 18px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
+.brand-title span { color: var(--accent); }
+.brand-sub { font-size: 11px; color: var(--text2); margin-top: 4px; letter-spacing: 1px; }
+
+.nav-group { margin-top: 12px; }
+.nav-group-title { font-size: 11px; color: var(--text2); padding: 0 20px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; cursor: pointer; font-size: 14px; color: var(--text2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 4px solid transparent; text-decoration: none;
+}
+.nav-item:hover { background: rgba(255,255,255,0.03); color: #fff; }
+.nav-item.active { background: rgba(45,124,255,0.1); color: #fff; border-left-color: var(--accent); box-shadow: inset 4px 0 10px -4px var(--accent); }
+.nav-item .icon { font-size: 18px; }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  height: 64px; background: var(--bg); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 28px; gap: 20px; flex-shrink: 0;
+}
+.topbar-title { font-size: 16px; font-weight: 700; flex: 1; }
+.topbar-title span { color: var(--accent); }
+
+.content { flex: 1; display: flex; overflow: hidden; }
+
+/* 2.0 配置库布局 */
+.config-grid { flex: 1; overflow-y: auto; padding: 32px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 24px; }
+
+.guard-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 20px;
+  padding: 24px; transition: 0.3s;
+}
+.guard-card:hover { border-color: var(--accent); transform: scale(1.02); }
+
+.guard-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+.guard-icon { font-size: 24px; background: var(--bg3); padding: 10px; border-radius: 12px; }
+.guard-name { font-size: 16px; font-weight: 800; margin-top: 12px; }
+
+.guard-details { margin-top: 16px; font-size: 13px; color: var(--text2); }
+.detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+.footer-bar { height: 40px; background: var(--bg2); border-top: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; font-size: 11px; color: var(--text2); gap: 20px; }
+.footer-link { color: var(--text2); text-decoration: none; }
+.footer-link.active { color: var(--accent2); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="brand">
+    <div class="brand-title">AI <span>巡检员</span></div>
+    <div class="brand-sub">AGENTIC INSPECTOR 2.0</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">管控中心</div>
+    <a href="index.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🛰️</span> 智能调度舱</div></a>
+    <a href="incident.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🚨</span> 响应处置中心</div></a>
+    <a href="traceback.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🧭</span> 智能溯源(倒查)</div></a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">自动执行</div>
+    <a href="assets.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🔄</span> SOP 巡查计划</div></a>
+    <div class="nav-item active"><span class="icon">🛡️</span> 常态布防配置</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">智慧大脑</div>
+    <a href="dashboard.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🧠</span> 策略优化建议</div></a>
+    <a href="report.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📄</span> 巡检效能报告</div></a>
+  </div>
+</div>
+
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-title">执行中心 · <span>常态感知布防</span></div>
+  </header>
+
+  <div class="config-grid">
+    <div class="guard-card">
+      <div class="guard-header">
+        <span class="guard-icon">🛡️</span>
+        <span style="color:var(--success); font-size: 10px; font-weight: 800;">PERMANENT</span>
+      </div>
+      <div class="guard-name">园区周界全时布防</div>
+      <div class="guard-details">
+        <div class="detail-row"><span>关联机位</span><span>12 路</span></div>
+        <div class="detail-row"><span>感知算法</span><span>翻越检测 / 异常停留</span></div>
+        <div class="detail-row"><span>生效时段</span><span>全天候 24/7</span></div>
+      </div>
+    </div>
+
+    <div class="guard-card">
+      <div class="guard-header">
+        <span class="guard-icon">🔥</span>
+        <span style="color:var(--warning); font-size: 10px; font-weight: 800;">NIGHT_ONLY</span>
+      </div>
+      <div class="guard-name">消防设施受阻感知</div>
+      <div class="guard-details">
+        <div class="detail-row"><span>关联机位</span><span>45 路</span></div>
+        <div class="detail-row"><span>感知算法</span><span>堆压检测 / 烟感增强</span></div>
+        <div class="detail-row"><span>生效时段</span><span>20:00 - 08:00</span></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer-bar">
+    <span style="font-weight: 800; color: #fff;">2.0 PROTOTYPE</span>
+    <a href="index.html" class="footer-link">调度舱 (2.0)</a>
+    <a href="incident.html" class="footer-link">事件中心</a>
+    <a href="traceback.html" class="footer-link">溯源工作台</a>
+    <a href="assets.html" class="footer-link">巡查资产库</a>
+    <a href="tasks.html" class="footer-link active">布防配置</a>
+    <div style="flex:1"></div>
+    <span>节点: SH-HQ-01</span>
+  </footer>
+</div>
+
+</body>
+</html>

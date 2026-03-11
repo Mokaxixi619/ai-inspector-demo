@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视觉智能巡查 Agent · 智能溯源工作台</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a1628; --bg2: #0f2240; --bg3: #162b4a;
+  --accent: #1e6fff; --accent2: #00c2ff;
+  --text: #e8f0fe; --text2: #a0b4c8; --border: #1e3a5f;
+  --success: #00d97e; --warning: #ffb800; --danger: #ff4757;
+  --font: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+
+.sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.logo-title { font-size: 16px; font-weight: 700; color: var(--accent2); }
+.logo-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.nav { flex: 1; padding: 16px 0; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 14px; color: var(--text2); transition: all 0.2s; border-left: 3px solid transparent; text-decoration: none; cursor: pointer; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(30,111,255,0.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-badge { margin-left: auto; background: var(--danger); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0; }
+.topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+.topbar-title span { color: var(--accent2); }
+
+/* 搜索英雄区 */
+.search-hero { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 20px 24px; flex-shrink: 0; }
+.search-title { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+.search-title strong { color: var(--accent2); }
+.search-bar { display: flex; gap: 10px; margin-bottom: 14px; }
+.search-input-wrap { flex: 1; display: flex; align-items: center; gap: 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; transition: border-color 0.2s; }
+.search-input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(30,111,255,0.1); }
+.search-input-wrap input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 15px; font-family: var(--font); }
+.search-input-wrap input::placeholder { color: var(--text2); }
+.search-btn { padding: 10px 24px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all 0.2s; white-space: nowrap; }
+.search-btn:hover { background: #3d7fff; }
+.filter-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-tag { display: flex; align-items: center; gap: 6px; padding: 5px 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; font-size: 12px; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+.filter-tag:hover { border-color: var(--accent); color: var(--accent); }
+.filter-tag.active { background: rgba(30,111,255,0.12); border-color: var(--accent); color: var(--accent); }
+.filter-tag select { background: transparent; border: none; outline: none; color: inherit; font-size: 12px; font-family: var(--font); cursor: pointer; }
+
+/* 三合一结果区 */
+.result-area { flex: 1; display: flex; overflow: hidden; }
+
+/* 时间轴 */
+.timeline-panel { width: 320px; min-width: 320px; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.panel-header { padding: 12px 16px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.panel-header-title { font-size: 13px; font-weight: 600; }
+.panel-header-sub { font-size: 11px; color: var(--text2); }
+.timeline-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.tl-result-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.2s; }
+.tl-result-item:hover { border-color: var(--accent); }
+.tl-result-item.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(30,111,255,0.2); }
+.tl-item-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg3); }
+.tl-match { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.tl-match.high { background: var(--danger); color: #fff; }
+.tl-match.mid { background: var(--warning); color: #000; }
+.tl-match.low { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
+.tl-time-badge { font-size: 12px; color: var(--text2); margin-left: auto; }
+.tl-item-body { display: flex; gap: 8px; padding: 8px 10px; }
+.tl-thumb { width: 72px; height: 52px; background: var(--bg3); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.tl-item-info { flex: 1; }
+.tl-item-desc { font-size: 12px; color: var(--text); line-height: 1.4; margin-bottom: 4px; }
+.tl-item-cam { font-size: 11px; color: var(--text2); }
+.play-btn { width: 24px; height: 24px; background: rgba(30,111,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; flex-shrink: 0; align-self: center; transition: all 0.2s; }
+.play-btn:hover { background: var(--accent); }
+
+/* 实体档案 */
+.entity-panel { width: 260px; min-width: 260px; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.entity-card { margin: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.entity-header { background: var(--bg3); padding: 12px; display: flex; gap: 10px; align-items: center; }
+.entity-avatar { width: 52px; height: 52px; background: var(--bg2); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; position: relative; overflow: hidden; border: 1px solid var(--border); }
+.entity-info { flex: 1; }
+.entity-id { font-size: 13px; font-weight: 700; color: var(--accent2); }
+.entity-type { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.entity-conf { font-size: 11px; color: var(--text2); margin-top: 3px; }
+.entity-body { padding: 10px 12px; }
+.entity-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.entity-row:last-child { border-bottom: none; }
+.entity-label { color: var(--text2); }
+.entity-value { color: var(--text); font-weight: 500; }
+.entity-shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 10px 12px; border-top: 1px solid var(--border); }
+.entity-shot { height: 48px; background: var(--bg3); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text2); position: relative; overflow: hidden; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s; }
+.entity-shot:hover { border-color: var(--accent); }
+
+/* 轨迹地图 */
+.map-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.map-container { flex: 1; position: relative; background: var(--bg); overflow: hidden; }
+.floor-plan { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 580px; height: 400px; }
+/* 楼层平面图（CSS绘制） */
+.fp-outer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 2px solid var(--border); border-radius: 8px; }
+.fp-room { position: absolute; border: 1px solid var(--border); background: rgba(15,34,64,0.6); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text2); }
+.fp-corridor { position: absolute; background: rgba(30,111,255,0.04); border: 1px dashed rgba(30,111,255,0.2); }
+/* 摄像头标记 */
+.cam-marker { position: absolute; width: 20px; height: 20px; background: var(--bg3); border: 2px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; cursor: pointer; transition: all 0.2s; z-index: 10; }
+.cam-marker:hover { border-color: var(--accent); transform: scale(1.2); }
+.cam-marker.alert { border-color: var(--danger); background: rgba(255,71,87,0.2); }
+/* 轨迹路径 */
+.traj-path { position: absolute; z-index: 5; }
+/* 目标标记 */
+.target-marker { position: absolute; width: 16px; height: 16px; background: var(--danger); border-radius: 50%; border: 2px solid #fff; z-index: 20; transform: translate(-50%, -50%); box-shadow: 0 0 10px var(--danger); animation: pulse-marker 1.5s infinite; }
+@keyframes pulse-marker { 0%,100%{box-shadow:0 0 6px var(--danger)} 50%{box-shadow:0 0 16px var(--danger), 0 0 30px rgba(255,71,87,0.3)} }
+.target-label { position: absolute; background: var(--danger); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; white-space: nowrap; transform: translate(-50%, -130%); z-index: 21; }
+/* 时间戳标签 */
+.traj-label { position: absolute; font-size: 10px; color: var(--text2); background: rgba(10,22,40,0.85); padding: 2px 5px; border-radius: 3px; white-space: nowrap; z-index: 15; }
+/* 地图图例 */
+.map-legend { position: absolute; bottom: 16px; left: 16px; background: rgba(10,22,40,0.9); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text2); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+/* 地图工具栏 */
+.map-toolbar { position: absolute; top: 16px; right: 16px; display: flex; flex-direction: column; gap: 6px; }
+.map-tool-btn { width: 32px; height: 32px; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+.map-tool-btn:hover { border-color: var(--accent); color: var(--accent); }
+/* 缩略图 */
+.map-mini { position: absolute; top: 16px; left: 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; }
+.map-mini-title { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+.map-mini-time { font-size: 20px; font-weight: 700; color: var(--accent2); }
+.map-mini-sub { font-size: 11px; color: var(--text2); }
+
+/* 底部时间轴控制 */
+.time-control { height: 64px; background: var(--bg2); border-top: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.time-ctrl-btn { width: 32px; height: 32px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+.time-ctrl-btn:hover { border-color: var(--accent); }
+.time-ctrl-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.time-slider-wrap { flex: 1; }
+.time-slider-bar { position: relative; height: 4px; background: var(--border); border-radius: 2px; cursor: pointer; margin-bottom: 6px; }
+.time-slider-fill { position: absolute; left: 0; top: 0; height: 100%; width: 35%; background: var(--accent); border-radius: 2px; }
+.time-slider-thumb { position: absolute; top: -6px; left: 35%; width: 16px; height: 16px; background: #fff; border-radius: 50%; transform: translateX(-50%); box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: grab; }
+.time-ticks { display: flex; justify-content: space-between; }
+.time-tick { font-size: 10px; color: var(--text2); }
+.time-current { font-size: 13px; color: var(--accent2); font-weight: 700; white-space: nowrap; }
+.speed-badge { font-size: 12px; color: var(--text2); padding: 3px 8px; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; white-space: nowrap; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.page-nav { background: var(--bg2); border-top: 1px solid var(--border); padding: 10px 24px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.page-nav span { font-size: 12px; color: var(--text2); }
+.page-link { padding: 4px 12px; border-radius: 14px; font-size: 12px; color: var(--text2); text-decoration: none; border: 1px solid var(--border); transition: all 0.2s; }
+.page-link:hover, .page-link.current { border-color: var(--accent); color: var(--accent); background: rgba(30,111,255,0.08); }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-title">🔭 巡查 Agent</div>
+    <div class="logo-sub">视觉智能运营平台</div>
+  </div>
+  <nav class="nav">
+    <a href="index.html" class="nav-item"><span class="icon">💬</span> Agent调度舱</a>
+    <a href="incident.html" class="nav-item"><span class="icon">📋</span> 事件闭环中心 <span class="nav-badge">7</span></a>
+    <div class="nav-item active"><span class="icon">🔍</span> 智能溯源工作台</div>
+    <a href="assets.html" class="nav-item"><span class="icon">📂</span> 巡查资产库</a>
+    <a href="skills.html" class="nav-item"><span class="icon">⚙️</span> 技能库管理</a>
+  </nav>
+  <div class="sidebar-footer">
+    <span class="status-dot"></span>
+    <span style="font-size:12px;color:var(--text2)">Agent运行中 · 23路在线</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">智能 <span>溯源工作台</span></div>
+    <span style="font-size:13px;color:var(--text2)">自然语言检索 · 跨镜轨迹追踪 · 目标实体归档</span>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button style="padding:6px 14px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:13px;cursor:pointer;font-family:var(--font)">📤 导出档案</button>
+      <button style="padding:6px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:13px;cursor:pointer;font-family:var(--font)">🗂️ 历史查询</button>
+    </div>
+  </div>
+
+  <!-- 搜索英雄区 -->
+  <div class="search-hero">
+    <div class="search-title">💬 自然语言描述你要找的人或事，AI自动完成跨镜追踪 · <strong>已完成查询：昨天14:00-18:00，前台大厅戴安全帽的人</strong></div>
+    <div class="search-bar">
+      <div class="search-input-wrap">
+        <span style="font-size:18px">🔍</span>
+        <input value="昨天14:00-18:00，前台大厅戴安全帽的人" />
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap">已找到 <strong style="color:var(--accent)">6</strong> 个结果</span>
+      </div>
+      <button class="search-btn">重新搜索</button>
+    </div>
+    <div class="filter-tags">
+      <div class="filter-tag active">📅 昨天 14:00 — 18:00</div>
+      <div class="filter-tag active">📍 全园区</div>
+      <div class="filter-tag active">👤 戴安全帽</div>
+      <div class="filter-tag">+ 添加条件</div>
+      <div class="filter-tag" style="margin-left:auto;">
+        排序：
+        <select><option>匹配度</option><option>时间</option><option>出现次数</option></select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 三合一结果 -->
+  <div class="result-area">
+
+    <!-- 左：时间轴结果 -->
+    <div class="timeline-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-header-title">📅 时间轴 <span style="color:var(--accent);font-size:12px">6条匹配</span></div>
+          <div class="panel-header-sub">按时间顺序，点击定位轨迹</div>
+        </div>
+      </div>
+      <div class="timeline-list">
+
+        <div class="tl-result-item active" onclick="selectTl(this)">
+          <div class="tl-item-header">
+            <span class="tl-match high">高匹配</span>
+            <span style="font-size:12px;color:var(--text)">前台大厅入口</span>
+            <span class="tl-time-badge">14:03:22</span>
+          </div>
+          <div class="tl-item-body">
+            <div class="tl-thumb" style="background:linear-gradient(135deg,#0f2240,#1a3a5c)">
+              <div style="position:absolute;width:40%;height:65%;left:30%;top:10%;border:2px solid var(--danger)"></div>
+              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-001</div>
+            </div>
+            <div class="tl-item-info">
+              <div class="tl-item-desc">1名戴黄色安全帽人员从前台大厅入口进入，特征与目标高度匹配</div>
+              <div class="tl-item-cam">Cam-001 · 置信度 94%</div>
+            </div>
+            <div class="play-btn">▶</div>
+          </div>
+        </div>
+
+        <div class="tl-result-item" onclick="selectTl(this)">
+          <div class="tl-item-header">
+            <span class="tl-match high">高匹配</span>
+            <span style="font-size:12px;color:var(--text)">走廊-A区</span>
+            <span class="tl-time-badge">14:06:41</span>
+          </div>
+          <div class="tl-item-body">
+            <div class="tl-thumb" style="background:linear-gradient(135deg,#0f1e28,#1a2a3a)">
+              <div style="position:absolute;width:35%;height:70%;left:35%;top:8%;border:2px solid var(--danger)"></div>
+              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-007</div>
+            </div>
+            <div class="tl-item-info">
+              <div class="tl-item-desc">同一目标经过A区走廊，向电梯方向移动</div>
+              <div class="tl-item-cam">Cam-007 · 跨镜追踪匹配</div>
+            </div>
+            <div class="play-btn">▶</div>
+          </div>
+        </div>
+
+        <div class="tl-result-item" onclick="selectTl(this)">
+          <div class="tl-item-header">
+            <span class="tl-match mid">中匹配</span>
+            <span style="font-size:12px;color:var(--text)">电梯厅</span>
+            <span class="tl-time-badge">14:08:15</span>
+          </div>
+          <div class="tl-item-body">
+            <div class="tl-thumb" style="background:linear-gradient(135deg,#101828,#1a2436)">
+              <div style="position:absolute;width:30%;height:60%;left:38%;top:12%;border:2px solid var(--warning)"></div>
+              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-009</div>
+            </div>
+            <div class="tl-item-info">
+              <div class="tl-item-desc">电梯厅检测到疑似同一人员，安全帽已摘除，外貌特征匹配</div>
+              <div class="tl-item-cam">Cam-009 · 置信度 78%</div>
+            </div>
+            <div class="play-btn">▶</div>
+          </div>
+        </div>
+
+        <div class="tl-result-item" onclick="selectTl(this)">
+          <div class="tl-item-header">
+            <span class="tl-match high">高匹配</span>
+            <span style="font-size:12px;color:var(--text)">机房门口</span>
+            <span class="tl-time-badge">14:12:33</span>
+          </div>
+          <div class="tl-item-body">
+            <div class="tl-thumb" style="background:linear-gradient(135deg,#1a0a28,#2a1a40)">
+              <div style="position:absolute;width:40%;height:65%;left:25%;top:10%;border:2px solid var(--danger)"></div>
+              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-004</div>
+            </div>
+            <div class="tl-item-info">
+              <div class="tl-item-desc">⚠️ 同一对象出现在机房门口，触发尾随入侵告警</div>
+              <div class="tl-item-cam">Cam-004 · 关联告警事件</div>
+            </div>
+            <div class="play-btn">▶</div>
+          </div>
+        </div>
+
+        <div class="tl-result-item" onclick="selectTl(this)">
+          <div class="tl-item-header">
+            <span class="tl-match mid">中匹配</span>
+            <span style="font-size:12px;color:var(--text)">B栋出口</span>
+            <span class="tl-time-badge">15:42:07</span>
+          </div>
+          <div class="tl-item-body">
+            <div class="tl-thumb" style="background:linear-gradient(135deg,#0e1a14,#1a2a20)">
+              <div style="position:absolute;width:35%;height:55%;left:32%;top:15%;border:2px solid var(--warning)"></div>
+              <div style="position:absolute;font-size:8px;color:rgba(255,255,255,0.4);bottom:2px;right:3px">Cam-015</div>
+            </div>
+            <div class="tl-item-info">
+              <div class="tl-item-desc">疑似同一人员从B栋出口离开园区</div>
+              <div class="tl-item-cam">Cam-015 · 置信度 71%</div>
+            </div>
+            <div class="play-btn">▶</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 中：实体档案 -->
+    <div class="entity-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-header-title">👤 目标实体档案</div>
+          <div class="panel-header-sub">AI自动生成 · 多角度归档</div>
+        </div>
+      </div>
+      <div style="overflow-y:auto;flex:1;">
+        <div class="entity-card">
+          <div class="entity-header">
+            <div class="entity-avatar" style="background:linear-gradient(135deg,#1a0a28,#2a1a40)">
+              <div style="position:absolute;width:60%;height:80%;left:20%;top:5%;border:2px solid var(--danger)"></div>
+              <div style="position:absolute;bottom:2px;right:2px;font-size:7px;color:rgba(255,255,255,0.4)">最佳截帧</div>
+            </div>
+            <div class="entity-info">
+              <div class="entity-id">目标 #TGT-2024-007</div>
+              <div class="entity-type">可疑人员 · 未登记</div>
+              <div class="entity-conf" style="color:var(--danger)">⚠️ 关联高级告警事件</div>
+            </div>
+          </div>
+          <div class="entity-body">
+            <div class="entity-row"><span class="entity-label">外貌特征</span><span class="entity-value">黄色安全帽、蓝色工装</span></div>
+            <div class="entity-row"><span class="entity-label">性别/体型</span><span class="entity-value">男性 · 中等身材</span></div>
+            <div class="entity-row"><span class="entity-label">首次出现</span><span class="entity-value">14:03:22 前台入口</span></div>
+            <div class="entity-row"><span class="entity-label">最后出现</span><span class="entity-value">15:42:07 B栋出口</span></div>
+            <div class="entity-row"><span class="entity-label">在园时长</span><span class="entity-value" style="color:var(--warning)">1小时38分钟</span></div>
+            <div class="entity-row"><span class="entity-label">出现摄像头</span><span class="entity-value">5路（确认）</span></div>
+            <div class="entity-row"><span class="entity-label">关联告警</span><span class="entity-value" style="color:var(--danger)">1条高级事件</span></div>
+          </div>
+          <div class="entity-shots">
+            <div class="entity-shot" style="background:linear-gradient(135deg,#0f2240,#1a3a5c)"><div style="position:absolute;width:50%;height:75%;left:25%;top:5%;border:1px solid var(--danger)"></div><span style="font-size:9px">14:03</span></div>
+            <div class="entity-shot" style="background:linear-gradient(135deg,#0f1e28,#1a2a3a)"><div style="position:absolute;width:45%;height:70%;left:28%;top:8%;border:1px solid var(--danger)"></div><span style="font-size:9px">14:06</span></div>
+            <div class="entity-shot" style="background:linear-gradient(135deg,#1a0a28,#2a1a40)"><div style="position:absolute;width:45%;height:70%;left:28%;top:8%;border:1px solid var(--danger)"></div><span style="font-size:9px">14:12</span></div>
+          </div>
+        </div>
+
+        <!-- 其他候选目标 -->
+        <div style="padding:10px 12px;">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">其他可能匹配目标</div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;opacity:0.6;">
+            <div style="width:36px;height:36px;background:var(--bg3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>
+            <div style="flex:1"><div style="font-size:12px">候选目标 #002</div><div style="font-size:11px;color:var(--text2)">相似度 62% · 蓝色安全帽</div></div>
+            <div style="font-size:11px;color:var(--text2)">2处匹配</div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;opacity:0.5;">
+            <div style="width:36px;height:36px;background:var(--bg3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>
+            <div style="flex:1"><div style="font-size:12px">候选目标 #003</div><div style="font-size:11px;color:var(--text2)">相似度 54% · 红色安全帽</div></div>
+            <div style="font-size:11px;color:var(--text2)">1处匹配</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：轨迹地图 -->
+    <div class="map-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-header-title">🗺️ 时空轨迹图 <span style="font-size:11px;color:var(--text2);font-weight:400">B栋1层平面</span></div>
+          <div class="panel-header-sub">目标移动路径 · 14:03 — 14:15</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button style="padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font)">1F</button>
+          <button style="padding:4px 10px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font)">2F</button>
+        </div>
+      </div>
+      <div class="map-container">
+        <!-- 平面图 -->
+        <div class="floor-plan">
+          <div class="fp-outer"></div>
+          <!-- 房间 -->
+          <div class="fp-room" style="left:5%;top:5%;width:28%;height:35%">前台大厅</div>
+          <div class="fp-room" style="left:35%;top:5%;width:30%;height:20%">会议室A</div>
+          <div class="fp-room" style="left:67%;top:5%;width:28%;height:35%">办公区</div>
+          <div class="fp-room" style="left:5%;top:55%;width:20%;height:40%">储物间</div>
+          <div class="fp-room" style="left:27%;top:55%;width:25%;height:40%">机房<br><span style="font-size:9px;color:var(--danger)">🔒 受限区域</span></div>
+          <div class="fp-room" style="left:54%;top:55%;width:20%;height:40%">电梯厅</div>
+          <div class="fp-room" style="left:76%;top:55%;width:19%;height:40%">安保室</div>
+          <!-- 走廊 -->
+          <div class="fp-corridor" style="left:5%;top:42%;width:90%;height:12%"></div>
+
+          <!-- 摄像头标记 -->
+          <div class="cam-marker alert" style="left:18%;top:38%" title="Cam-001 前台大厅">📷</div>
+          <div class="cam-marker" style="left:48%;top:38%" title="Cam-007 走廊A">📷</div>
+          <div class="cam-marker" style="left:56%;top:52%" title="Cam-009 电梯厅">📷</div>
+          <div class="cam-marker alert" style="left:27%;top:52%" title="Cam-004 机房门口">📷</div>
+          <div class="cam-marker" style="left:78%;top:38%" title="Cam-003 办公区">📷</div>
+
+          <!-- 轨迹路径SVG -->
+          <svg class="traj-path" style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;">
+            <defs>
+              <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L8,3 z" fill="rgba(255,71,87,0.8)"/>
+              </marker>
+            </defs>
+            <!-- 移动路径 -->
+            <polyline points="105,185 200,195 280,195 320,260 328,310"
+              fill="none" stroke="rgba(255,71,87,0.6)" stroke-width="2.5"
+              stroke-dasharray="6,3" marker-end="url(#arrow)"/>
+            <!-- 经过点圈 -->
+            <circle cx="105" cy="185" r="6" fill="none" stroke="var(--danger)" stroke-width="2"/>
+            <circle cx="200" cy="195" r="5" fill="none" stroke="rgba(255,71,87,0.6)" stroke-width="1.5"/>
+            <circle cx="280" cy="195" r="5" fill="none" stroke="rgba(255,71,87,0.6)" stroke-width="1.5"/>
+            <circle cx="320" cy="260" r="5" fill="none" stroke="rgba(255,71,87,0.6)" stroke-width="1.5"/>
+          </svg>
+
+          <!-- 时间戳标签 -->
+          <div class="traj-label" style="left:8%;top:29%">14:03:22</div>
+          <div class="traj-label" style="left:32%;top:29%">14:06:41</div>
+          <div class="traj-label" style="left:44%;top:38%">14:08:15</div>
+          <div class="traj-label" style="left:50%;top:46%">14:12:33 ⚠️</div>
+
+          <!-- 当前位置目标标记 -->
+          <div class="target-marker" style="left:55.5%;top:80%"></div>
+          <div class="target-label" style="left:55.5%;top:80%">目标当前位置</div>
+        </div>
+
+        <!-- 地图图例 -->
+        <div class="map-legend">
+          <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:4px">图例</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div>目标确认位置</div>
+          <div class="legend-item"><div style="width:20px;height:2px;background:rgba(255,71,87,0.6);border-top:2px dashed rgba(255,71,87,0.6)"></div>移动轨迹</div>
+          <div class="legend-item"><span style="font-size:12px">📷</span>摄像头（<span style="color:var(--danger)">红</span>=预警）</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--danger);animation:pulse-marker 1.5s infinite"></div>当前位置</div>
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="map-toolbar">
+          <div class="map-tool-btn">🔍</div>
+          <div class="map-tool-btn">+</div>
+          <div class="map-tool-btn">−</div>
+          <div class="map-tool-btn">⊡</div>
+        </div>
+
+        <!-- 统计浮层 -->
+        <div class="map-mini">
+          <div class="map-mini-title">追踪路径长度</div>
+          <div class="map-mini-time">5处</div>
+          <div class="map-mini-sub">摄像头确认 · 跨区追踪</div>
+        </div>
+      </div>
+
+      <!-- 时间轴控制 -->
+      <div class="time-control">
+        <div class="time-ctrl-btn">⏮</div>
+        <div class="time-ctrl-btn">◀</div>
+        <div class="time-ctrl-btn active">▶</div>
+        <div class="time-ctrl-btn">▶▶</div>
+        <div class="time-slider-wrap">
+          <div class="time-slider-bar">
+            <div class="time-slider-fill"></div>
+            <div class="time-slider-thumb"></div>
+          </div>
+          <div class="time-ticks">
+            <span class="time-tick">14:00</span>
+            <span class="time-tick">14:30</span>
+            <span class="time-tick">15:00</span>
+            <span class="time-tick">15:30</span>
+            <span class="time-tick">16:00</span>
+          </div>
+        </div>
+        <div class="time-current">14:12:33</div>
+        <div class="speed-badge">1× 速</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="page-nav">
+    <span>原型导航：</span>
+    <a class="page-link" href="index.html">💬 调度舱</a>
+    <a class="page-link" href="incident.html">📋 事件中心</a>
+    <a class="page-link current" href="traceback.html">🔍 溯源工作台</a>
+    <a class="page-link" href="assets.html">📂 资产库</a>
+    <a class="page-link" href="skills.html">⚙️ 技能库</a>
+  </div>
+</div>
+
+<script>
+function selectTl(el) {
+  document.querySelectorAll('.tl-result-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

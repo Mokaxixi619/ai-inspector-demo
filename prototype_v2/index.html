@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI视觉巡检员 2.0 · 智能调度舱</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #050a14;
+  --bg2: #0b1321;
+  --bg3: #111d2e;
+  --accent: #2d7cff;
+  --accent-glow: rgba(45, 124, 255, 0.4);
+  --accent2: #00f2ff;
+  --text: #e1e7f0;
+  --text2: #8a9cb5;
+  --border: #1e2f47;
+  --success: #00ff88;
+  --warning: #ffcc00;
+  --danger: #ff4d4d;
+  --font: 'Inter', 'PingFang SC', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); display: flex; height: 100vh; overflow: hidden; }
+
+/* 2.0 侧边导航：业务中心制 */
+.sidebar {
+  width: 240px; min-width: 240px; background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: 0;
+}
+.brand { padding: 24px 20px; background: linear-gradient(to bottom, rgba(45,124,255,0.05), transparent); }
+.brand-title { font-size: 18px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
+.brand-title span { color: var(--accent); }
+.brand-sub { font-size: 11px; color: var(--text2); margin-top: 4px; letter-spacing: 1px; }
+
+.nav-group { margin-top: 12px; }
+.nav-group-title { font-size: 11px; color: var(--text2); padding: 0 20px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; cursor: pointer; font-size: 14px; color: var(--text2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 4px solid transparent;
+}
+.nav-item:hover { background: rgba(255,255,255,0.03); color: #fff; }
+.nav-item.active { background: rgba(45,124,255,0.1); color: #fff; border-left-color: var(--accent); box-shadow: inset 4px 0 10px -4px var(--accent); }
+.nav-item .icon { font-size: 18px; opacity: 0.8; transition: transform 0.3s; }
+.nav-item:hover .icon { transform: scale(1.1); opacity: 1; }
+.nav-badge { margin-left: auto; background: var(--danger); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 4px; }
+
+.sidebar-footer { margin-top: auto; padding: 20px; background: rgba(0,0,0,0.2); }
+.sys-status { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text2); }
+.pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite; }
+@keyframes pulse { 0% { transform: scale(0.9); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.8; } }
+
+/* 主内容区 */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+/* 2.0 顶栏：指挥舱模式 */
+.topbar {
+  height: 64px; background: var(--bg); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 28px; gap: 20px; flex-shrink: 0;
+  z-index: 10;
+}
+.view-switcher { display: flex; background: var(--bg2); border-radius: 8px; padding: 4px; border: 1px solid var(--border); }
+.view-tab { padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+.view-tab.active { background: var(--bg3); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+
+.topbar-stats { display: flex; gap: 24px; margin-left: auto; }
+.top-stat { display: flex; flex-direction: column; align-items: flex-end; }
+.top-stat-val { font-size: 16px; font-weight: 700; color: var(--accent2); }
+.top-stat-label { font-size: 10px; color: var(--text2); text-transform: uppercase; }
+
+/* 模式切换控制面板 */
+.mode-ribbon {
+  height: 48px; background: var(--bg3); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 28px; gap: 24px;
+}
+.mode-indicator { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--text); }
+.mode-indicator .tag { padding: 3px 8px; border-radius: 4px; font-size: 10px; background: var(--accent); color: #fff; }
+
+.content { flex: 1; display: flex; overflow: hidden; background-image: radial-gradient(circle at 50% 50%, rgba(30, 111, 255, 0.03) 0%, transparent 70%); }
+
+/* 左侧：盯防/巡查快速列表 */
+.task-monitor {
+  width: 260px; background: var(--bg2); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.monitor-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.monitor-title { font-size: 12px; font-weight: 800; color: var(--text2); letter-spacing: 1px; }
+.monitor-scroll { flex: 1; overflow-y: auto; padding: 12px; }
+
+.live-card {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden;
+  transition: all 0.3s; cursor: pointer;
+}
+.live-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.live-card.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+.live-thumb { height: 100px; background: #000; position: relative; overflow: hidden; }
+.live-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
+.live-tag { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; font-size: 9px; display: flex; align-items: center; gap: 4px; }
+.live-rec { width: 6px; height: 6px; border-radius: 50%; background: var(--danger); animation: blink 1s infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.live-info { padding: 10px; }
+.live-name { font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; }
+.live-meta { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+/* 中间：智能调度舱交互区 */
+.interaction-zone { flex: 1; display: flex; flex-direction: column; position: relative; }
+.chat-container { flex: 1; padding: 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
+
+/* 对话 2.0 样式 */
+.msg-row { display: flex; gap: 16px; max-width: 90%; }
+.msg-avatar { width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.msg-avatar.ai { background: linear-gradient(135deg, #2d7cff 0%, #00f2ff 100%); position: relative; }
+.msg-avatar.ai::after { content: ''; position: absolute; inset: -2px; border-radius: 14px; border: 1px solid var(--accent); opacity: 0.3; }
+.msg-avatar.user { background: var(--bg3); border: 1px solid var(--border); }
+
+.msg-bubble { position: relative; }
+.bubble-header { font-size: 11px; font-weight: 800; color: var(--text2); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.bubble-text {
+  padding: 16px 20px; border-radius: 16px; font-size: 15px; line-height: 1.6;
+  background: var(--bg2); border: 1px solid var(--border); border-top-left-radius: 4px;
+}
+.msg-row.user { align-self: flex-end; flex-direction: row-reverse; }
+.msg-row.user .bubble-text { background: var(--accent); color: #fff; border: none; border-top-left-radius: 16px; border-top-right-radius: 4px; box-shadow: 0 4px 15px rgba(45,124,255,0.3); }
+.msg-row.user .bubble-header { flex-direction: row-reverse; }
+
+/* 2.0 业务卡片组件 */
+.biz-card { margin-top: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; width: 100%; max-width: 500px; }
+.biz-card-header { padding: 14px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+.biz-card-icon { font-size: 20px; }
+.biz-card-title { font-size: 15px; font-weight: 700; }
+.biz-card-body { padding: 20px; }
+
+/* 自动巡更进度 */
+.inspection-walk { display: flex; flex-direction: column; gap: 16px; }
+.walk-node { display: flex; gap: 12px; position: relative; padding-bottom: 12px; }
+.walk-node:not(:last-child)::after { content: ''; position: absolute; left: 10px; top: 22px; bottom: 0; width: 2px; background: var(--border); }
+.node-idx { width: 22px; height: 22px; border-radius: 50%; background: var(--bg3); border: 2px solid var(--border); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.walk-node.active .node-idx { border-color: var(--accent); background: var(--accent); color: #fff; box-shadow: 0 0 10px var(--accent-glow); }
+.walk-node.done .node-idx { border-color: var(--success); background: var(--success); color: #000; }
+.node-info { flex: 1; }
+.node-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.node-status { font-size: 11px; color: var(--text2); }
+
+/* 输入中心 2.0 */
+.input-center { padding: 24px 32px; background: var(--bg); position: relative; }
+.input-wrapper {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 20px;
+  display: flex; align-items: flex-end; padding: 10px 16px; transition: all 0.3s;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+.input-wrapper:focus-within { border-color: var(--accent); box-shadow: 0 10px 40px rgba(45,124,255,0.15); }
+.action-btn { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+.action-btn:hover { background: var(--bg3); color: #fff; }
+.main-input { flex: 1; background: transparent; border: none; color: #fff; padding: 10px; font-size: 16px; outline: none; min-height: 40px; max-height: 200px; font-family: inherit; }
+.send-btn-v2 {
+  width: 44px; height: 44px; border-radius: 14px; background: var(--accent);
+  display: flex; align-items: center; justify-content: center; border: none; color: #fff; cursor: pointer;
+  transition: all 0.2s; box-shadow: 0 4px 12px rgba(45,124,255,0.4);
+}
+.send-btn-v2:hover { transform: scale(1.05); background: #3d88ff; }
+
+/* 右侧：2.0 管理洞察面板 */
+.insight-panel { width: 320px; background: var(--bg2); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+.panel-head { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.panel-title-2 { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent2); }
+.insight-scroll { flex: 1; overflow-y: auto; padding: 20px; }
+
+.insight-card {
+  background: linear-gradient(135deg, rgba(45,124,255,0.08) 0%, transparent 100%);
+  border: 1px solid rgba(45,124,255,0.2); border-radius: 16px; padding: 16px; margin-bottom: 20px;
+}
+.insight-tag { font-size: 10px; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; display: block; }
+.insight-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+.insight-action { margin-top: 12px; font-size: 12px; font-weight: 700; color: var(--accent2); cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+/* 支撑系统状态页 */
+.system-metrics { margin-top: auto; padding: 20px; border-top: 1px solid var(--border); }
+.metric-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 11px; }
+.metric-label { color: var(--text2); }
+.metric-bar { height: 4px; background: var(--bg3); border-radius: 2px; flex: 1; margin: 0 12px; position: relative; top: 4px; }
+.metric-fill { height: 100%; border-radius: 2px; background: var(--accent); }
+
+/* 底部功能条 2.0 */
+.footer-bar {
+  height: 40px; background: var(--bg2); border-top: 1px solid var(--border);
+  display: flex; align-items: center; px: 20px; font-size: 11px; color: var(--text2);
+  gap: 20px;
+}
+.footer-link { color: var(--text2); text-decoration: none; transition: 0.2s; }
+.footer-link:hover { color: var(--accent); }
+.footer-link.active { color: var(--accent2); font-weight: 700; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- 2.0 侧边栏：核心业务中心 -->
+<div class="sidebar">
+  <div class="brand">
+    <div class="brand-title">AI <span>巡检员</span></div>
+    <div class="brand-sub">AGENTIC INSPECTOR 2.0</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">管控中心</div>
+    <div class="nav-item active"><span class="icon">🛰️</span> 智能调度舱</div>
+    <a href="incident.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🚨</span> 响应处置中心 <span class="nav-badge">12</span></div></a>
+    <a href="traceback.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🧭</span> 智能溯源(倒查)</div></a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">自动执行</div>
+    <a href="assets.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🔄</span> SOP 巡查计划</div></a>
+    <a href="tasks.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🛡️</span> 常态布防配置</div></a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">智慧大脑</div>
+    <a href="dashboard.html" style="text-decoration:none"><div class="nav-item"><span class="icon">🧠</span> 策略优化建议</div></a>
+    <a href="report.html" style="text-decoration:none"><div class="nav-item"><span class="icon">📄</span> 巡检效能报告</div></a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sys-status">
+      <span class="pulse-dot"></span>
+      <span>策略引擎启动中 · 全时布防已生效</span>
+    </div>
+  </div>
+</div>
+
+<!-- 主体 -->
+<div class="main">
+  <!-- 顶栏：多维视图切换 -->
+  <header class="topbar">
+    <div class="view-switcher">
+      <div class="view-tab active">对话指挥视图</div>
+      <div class="view-tab">实景布控视图</div>
+      <div class="view-tab">算力拓扑视图</div>
+    </div>
+
+    <div class="topbar-stats">
+      <div class="top-stat">
+        <span class="top-stat-val">1.2s</span>
+        <span class="top-stat-label">感知时延</span>
+      </div>
+      <div class="top-stat">
+        <span class="top-stat-val">99.8%</span>
+        <span class="top-stat-label">算法置信度</span>
+      </div>
+    </div>
+    <button class="send-btn-v2" style="width:auto; padding: 0 16px; font-size: 13px;">紧急一键锁定</button>
+  </header>
+
+  <!-- 模式子条 -->
+  <div class="mode-ribbon">
+    <div class="mode-indicator">
+      <span class="tag">ACTIVE</span>
+      当前模式: 智能调度 (布防+盯防联动)
+    </div>
+    <div style="flex:1"></div>
+    <div style="font-size: 11px; color: var(--text2)">
+      下一组自动巡查: <strong style="color:var(--accent)">[园区周界]</strong> 10分钟后启动
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 左侧监控流 -->
+    <div class="task-monitor">
+      <div class="monitor-header">
+        <div class="monitor-title">实时盯防队列</div>
+        <div style="font-size: 11px; color: var(--accent2)">5 路并发</div>
+      </div>
+      <div class="monitor-scroll">
+        <div class="live-card active">
+          <div class="live-thumb">
+            <div class="live-tag"><span class="live-rec"></span> 盯防中 · CAM-05</div>
+            <img src="https://images.unsplash.com/photo-1621243804936-775306a8f2e3?auto=format&fit=crop&q=80&w=400">
+          </div>
+          <div class="live-info">
+            <div class="live-name">正门落客区 <span>94%</span></div>
+            <div class="live-meta">监测目标: 违规停留车辆</div>
+          </div>
+        </div>
+        <div class="live-card">
+          <div class="live-thumb">
+            <div class="live-tag">巡查中 · CAM-12</div>
+            <img src="https://images.unsplash.com/photo-1541888946425-d81bb19480c5?auto=format&fit=crop&q=80&w=400">
+          </div>
+          <div class="live-info">
+            <div class="live-name">3号消防梯</div>
+            <div class="live-meta">任务: SOP 通道清空确认</div>
+          </div>
+        </div>
+        <div class="live-card">
+          <div class="live-thumb">
+            <div class="live-tag">布防 · CAM-02</div>
+            <img src="https://images.unsplash.com/photo-1590487988256-9ed24133463e?auto=format&fit=crop&q=80&w=400">
+          </div>
+          <div class="live-info">
+            <div class="live-name">地下车库 B区</div>
+            <div class="live-meta">策略: 异常聚集算法</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中间对话 -->
+    <div class="interaction-zone">
+      <div class="chat-container">
+
+        <!-- AI：2.0 初始报告 -->
+        <div class="msg-row">
+          <div class="msg-avatar ai">🍦</div>
+          <div class="msg-bubble">
+            <div class="bubble-header">AI 巡检员 · 策略分发</div>
+            <div class="bubble-text">
+              <p>茜姐，2.0 核心策略引擎已加载。目前园区 <strong>SOP 自动化覆盖度 92%</strong>。</p>
+              <p>检测到今早 <strong>“盯防”</strong> 任务有 2 处异常待确认，是否需要我介入自动溯源？</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 用户：盯防需求 -->
+        <div class="msg-row user">
+          <div class="msg-avatar user">👤</div>
+          <div class="msg-bubble">
+            <div class="bubble-header">管理员</div>
+            <div class="bubble-text">
+              <p>开启盯防模式：锁定那辆黑色的苏A车，它在落客区停很久了，看看它接下来去哪。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI：展示支撑系统动作 -->
+        <div class="msg-row">
+          <div class="msg-avatar ai">🍦</div>
+          <div class="msg-bubble">
+            <div class="bubble-header">AI 巡检员 · 全速执行</div>
+            <div class="bubble-text">
+              <p>已启动 **[临时盯防任务]**。我已调度 CAM-05 实时锁定目标车辆 [苏A·XXXXX]。</p>
+              <p>算力资源已从 [非核心巡查] 成功切配至 [实时目标特征提取]。</p>
+            </div>
+
+            <!-- 2.0 任务卡片 -->
+            <div class="biz-card">
+              <div class="biz-card-header" style="background: rgba(45,124,255,0.1)">
+                <span class="biz-card-icon">🎯</span>
+                <span class="biz-card-title">实时盯防任务：目标跟踪中</span>
+              </div>
+              <div class="biz-card-body">
+                <div style="height: 120px; background: #000; border-radius: 8px; margin-bottom: 12px; position: relative;">
+                  <div style="position:absolute; top: 10px; left:10px; padding: 2px 6px; background: var(--danger); font-size: 10px;">TRACKING</div>
+                  <div style="border: 2px solid var(--success); position: absolute; width:60px; height:40px; top:40px; left:120px;"></div>
+                  <div style="color: var(--success); position: absolute; top:85px; left:120px; font-size: 10px; font-weight: 800;">Target: Black_SUV_98%</div>
+                </div>
+                <div class="inspection-walk">
+                  <div class="walk-node done">
+                    <div class="node-idx">1</div>
+                    <div class="node-info">
+                      <div class="node-name">CAM-05 正门落客区</div>
+                      <div class="node-status">目标出现 · 停留 12min (超时)</div>
+                    </div>
+                  </div>
+                  <div class="walk-node active">
+                    <div class="node-idx">2</div>
+                    <div class="node-info">
+                      <div class="node-name">CAM-06 停车场通道</div>
+                      <div class="node-status">路径预测中 · 正在接力...</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 输入中心 -->
+      <div class="input-center">
+        <div class="input-wrapper">
+          <button class="action-btn">📎</button>
+          <textarea class="main-input" placeholder="下达布防、盯防或巡查指令 (例如: '帮我盯防一号楼后门...')" rows="1"></textarea>
+          <button class="send-btn-v2">↑</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：管理洞察面板 -->
+    <div class="insight-panel">
+      <div class="panel-head">
+        <div class="panel-title-2">AI 管理洞察</div>
+        <span>🧠</span>
+      </div>
+      <div class="insight-scroll">
+
+        <div class="insight-card">
+          <span class="insight-tag">策略优化建议</span>
+          <div class="insight-text">
+            根据过去 7 天数据，**地下车库 B2 出口** 在 18:00-19:00 的人员走动异常增加，建议将该时段的“常态布防”升级为“高频巡查”。
+          </div>
+          <div class="insight-action">一键应用优化案 →</div>
+        </div>
+
+        <div class="insight-card" style="border-color: var(--warning)">
+          <span class="insight-tag" style="color:var(--warning)">风险预警</span>
+          <div class="insight-text">
+            检测到 **SOP 消防巡检** 覆盖率下降至 84%，原因：CAM-18 镜头受尘土遮挡导致置信度下降。
+          </div>
+          <div class="insight-action">生成维修单并通知自控 →</div>
+        </div>
+
+        <div class="insight-card">
+          <span class="insight-tag">管理分析</span>
+          <div class="insight-text">
+            本周外卖员违规入梯率下降 **12%**，得益于“实时盯防”在中午高峰期的有效介入。
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 系统指标指标 -->
+      <div class="system-metrics">
+        <div class="metric-row">
+          <span class="metric-label">边缘算力负载</span>
+          <span>42%</span>
+        </div>
+        <div class="metric-bar"><div class="metric-fill" style="width: 42%"></div></div>
+        <div class="metric-row" style="margin-top: 12px">
+          <span class="metric-label">技能库模型版本</span>
+          <span style="color:var(--accent2)">YOLO_v8_SOP_Pro_v2</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部功能条 -->
+  <footer class="footer-bar">
+    <span style="font-weight: 800; color: #fff;">2.0 PROTOTYPE</span>
+    <a href="index.html" class="footer-link active">调度舱 (2.0)</a>
+    <a href="incident.html" class="footer-link">事件中心</a>
+    <a href="traceback.html" class="footer-link">溯源工作台</a>
+    <a href="assets.html" class="footer-link">巡查资产库</a>
+    <a href="tasks.html" class="footer-link">布防配置</a>
+    <div style="flex:1"></div>
+    <span>节点: SH-HQ-01</span>
+    <span>用户: Yan Candice</span>
+  </footer>
+</div>
+
+</body>
+</html>
